@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                tools:background="#FF0000"
+                android:layout_width="match_parent"
+                android:layout_height="64dp">
+    <TextView
+        android:id="@+id/txt_time"
+        android:layout_width="60dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:textColor="@android:color/black"
+        android:layout_marginTop="10dp"
+        android:gravity="start"
+        tools:text="8:00 PM" />
+    <TextView
+        android:id="@+id/txt_duration"
+        android:layout_width="60dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/txt_time"
+        android:layout_marginLeft="16dp"
+        android:gravity="start"
+        android:textSize="12sp"
+        tools:text="2h30m"/>
+    <View
+        android:id="@+id/image_label"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:background="#A53E5E"
+        android:layout_margin="10dp"
+        android:layout_toRightOf="@id/txt_time"/>
+
+    <TextView
+        android:id="@+id/txt_event_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/image_label"
+        android:layout_marginTop="8dp"
+        android:layout_marginLeft="10dp"
+        android:textColor="@android:color/black"
+        android:textSize="16sp"
+        tools:text="Drink with Ada" />
+    <TextView
+        android:id="@+id/txt_location"
+        android:layout_below="@id/txt_event_title"
+        android:layout_alignLeft="@id/txt_event_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textSize="12sp"
+        tools:text="Welcome to the Johnston"/>
+</RelativeLayout>
