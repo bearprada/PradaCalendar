@@ -2,19 +2,18 @@ package example.prada.lab.pradaoutlook;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
+
 import com.github.sundeepk.compactcalendarview.CompactCalendarView;
-import com.github.sundeepk.compactcalendarview.domain.Event;
 
 import org.zakariya.stickyheaders.StickyHeaderLayoutManager;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
+import example.prada.lab.pradaoutlook.model.MockEventStore;
 import example.prada.lab.pradaoutlook.utils.Utility;
 
 public class CalendarActivity extends AppCompatActivity implements AgendaAdapter.OnAgendaScrolledListener,
@@ -34,11 +33,12 @@ public class CalendarActivity extends AppCompatActivity implements AgendaAdapter
         mAgendaView = (RecyclerView) findViewById(R.id.agenda_list);
         StickyHeaderLayoutManager lm = new StickyHeaderLayoutManager();
         mAgendaView.setLayoutManager(lm);
-        Calendar from = Calendar.getInstance();
-        // FIXME this is the test data, the range should be form the first record of events
-        from.set(Calendar.MONTH, from.get(Calendar.MONTH) - 1);
 
-        mAdapter = new AgendaAdapter(this, from);
+        MockEventStore store = MockEventStore.getInstance(this);
+        Calendar from = store.getFirstEventTime();
+        Calendar to = store.getLatestEventTime();
+
+        mAdapter = new AgendaAdapter(this, from, to);
         mAdapter.setListener(this);
         mAgendaView.setAdapter(mAdapter);
 

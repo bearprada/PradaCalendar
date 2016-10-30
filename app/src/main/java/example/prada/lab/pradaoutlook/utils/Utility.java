@@ -17,11 +17,20 @@ public class Utility {
         if (year1 == year2) {
             return cal2.get(Calendar.DAY_OF_YEAR) - cal1.get(Calendar.DAY_OF_YEAR);
         }
-        int days = cal1.get(Calendar.DAY_OF_YEAR);
-        for (int i = year1; i < year2; i++) {
-            days += (i % 4 == 0) ? 366 : 365;
+        int days = (getDaysOfYear(year1) - cal1.get(Calendar.DAY_OF_YEAR));
+        days += cal2.get(Calendar.DAY_OF_YEAR);
+        for (int i = year1 + 1; i < year2; i++) {
+            days += getDaysOfYear(i);
         }
         return days;
+    }
+
+    private static int getDaysOfYear(int year) {
+        return isLeapYear(year) ? 366 : 365;
+    }
+
+    private static boolean isLeapYear(int year) {
+        return year > 0 && (year % 4 == 0);
     }
 
     public static String convertDayStr(int day) {
@@ -75,9 +84,5 @@ public class Utility {
                 throw new IllegalArgumentException("the month should be between 0 - 11, but it's " + month);
 
         }
-    }
-
-    public static String timestampTo(long duration) {
-        return "2h30m"; // TODO
     }
 }

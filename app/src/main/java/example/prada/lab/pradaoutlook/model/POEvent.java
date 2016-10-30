@@ -34,7 +34,20 @@ public class POEvent {
         return mTo;
     }
 
-    public long getDuration() {
-        return mTo.getTime() - mFrom.getTime();
+    // TODO Test caes, expected format : 2h30m
+    public String getDurationString() {
+        long seconds = (mTo.getTime() - mFrom.getTime()) / 1000;
+        if (seconds < 60) { // it's less then 1 min.
+            return null;
+        }
+        int hour = (int) (seconds / 3600);
+        int min = (int) ((seconds % 3600) / 60);
+        if (hour <= 0 && min > 0) {
+            return min + "m";
+        }
+        if (min <= 0 && hour > 0) {
+            return hour + "h";
+        }
+        return hour + "h" + min + "m";
     }
 }

@@ -1,5 +1,6 @@
 package example.prada.lab.pradaoutlook.view;
 
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.TextView;
 
@@ -7,7 +8,6 @@ import org.zakariya.stickyheaders.SectioningAdapter;
 
 import example.prada.lab.pradaoutlook.R;
 import example.prada.lab.pradaoutlook.model.POEvent;
-import example.prada.lab.pradaoutlook.utils.Utility;
 
 /**
  * Created by prada on 10/29/16.
@@ -30,6 +30,9 @@ public class EventViewHolder extends SectioningAdapter.ItemViewHolder {
     public void bind(POEvent event) {
         mTxtTitle.setText(event.getTitle());
         mTxtTime.setText("8:00 PM"); // FIXME
-        mTxtDuration.setText(Utility.timestampTo(event.getDuration()));
+        String durationStr = event.getDurationString();
+        if (!TextUtils.isEmpty(durationStr)) {
+            mTxtDuration.setText(durationStr);
+        }
     }
 }

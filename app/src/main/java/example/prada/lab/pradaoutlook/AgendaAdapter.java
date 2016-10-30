@@ -11,6 +11,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import example.prada.lab.pradaoutlook.model.MockEventStore;
 import example.prada.lab.pradaoutlook.model.POEvent;
 import example.prada.lab.pradaoutlook.utils.Utility;
 import example.prada.lab.pradaoutlook.view.DayViewHolder;
@@ -26,18 +27,18 @@ public class AgendaAdapter extends SectioningAdapter {
 
     private final LayoutInflater mInflater;
     private final Calendar mFrom;
-    private final Calendar mNow;
-    private final EventStore mStore;
+    private final Calendar mTo;
+    private final MockEventStore mStore;
     private OnAgendaScrolledListener mListener;
 
-    public AgendaAdapter(@NonNull Context ctx, @NonNull Calendar from) {
+    public AgendaAdapter(@NonNull Context ctx, @NonNull Calendar from, @NonNull Calendar to) {
         mInflater = LayoutInflater.from(ctx);
-        mNow = Calendar.getInstance();
-        if (mNow.before(from)) {
-            new IllegalArgumentException("the start of date is wrong, it should be before then the current time");
+        if (to.before(from)) {
+            new IllegalArgumentException("the start of date is wrong, it should be before then this time " + to.toString());
         }
+        mTo = to;
         mFrom = from;
-        mStore = EventStore.getInstance(ctx);
+        mStore = MockEventStore.getInstance(ctx);
     }
 
     public void setListener(OnAgendaScrolledListener listener) {
@@ -86,7 +87,7 @@ public class AgendaAdapter extends SectioningAdapter {
 
     @Override
     public int getNumberOfSections() {
-        return Utility.getDaysBetween(mFrom, mNow);
+        return Utility.getDaysBetween(mFrom, mTo);
     }
 
     @Override
@@ -98,20 +99,23 @@ public class AgendaAdapter extends SectioningAdapter {
         }
     }
 
-    private boolean hasEvent(int sectionIndex) {
+    // TODO reuse the array with long values
+    private long[] convertSectionIdxToTimestampRange(int sectionIdx) {
         Calendar c = (Calendar) mFrom.clone();
-        c.add(Calendar.HOUR, 24 * sectionIndex);
+        c.add(Calendar.HOUR, 24 * sectionIdx);
         long t1 =  c.getTimeInMillis();
         c.add(Calendar.HOUR, 24);
-        return mStore.hasEvents(t1, c.getTimeInMillis());
+        return new long[] {t1, c.getTimeInMillis()};
+    }
+
+    private boolean hasEvent(int sectionIndex) {
+        long[] range = convertSectionIdxToTimestampRange(sectionIndex);
+        return mStore.hasEvents(range[0], range[1]);
     }
 
     private List<POEvent> queryEvents(int sectionIndex) {
-        Calendar c = (Calendar) mFrom.clone();
-        c.add(Calendar.HOUR, 24 * sectionIndex);
-        long t1 =  c.getTimeInMillis();
-        c.add(Calendar.HOUR, 24);
-        return mStore.queryEvents(t1, c.getTimeInMillis());
+        long[] range = convertSectionIdxToTimestampRange(sectionIndex);
+        return mStore.queryEvents(range[0], range[1]);
     }
 
     @Override
@@ -121,13 +125,9 @@ public class AgendaAdapter extends SectioningAdapter {
 
     @Override
     public int getNumberOfItemsInSection(int sectionIndex) {
-        Calendar c = (Calendar) mFrom.clone();
-        c.add(Calendar.HOUR, 24 * sectionIndex);
-        long t1 =  c.getTimeInMillis();
-        c.add(Calendar.HOUR, 24);
-
-        List<POEvent> events = mStore.queryEvents(t1, c.getTimeInMillis());
-        return events.isEmpty() ? 1 : events.size(); // FIXME the empty case
+        long[] range = convertSectionIdxToTimestampRange(sectionIndex);
+        int numEvents = mStore.countEvents(range[0], range[1]);
+        return numEvents == 0 ? 1 : numEvents;
     }
 
     public interface OnAgendaScrolledListener {
