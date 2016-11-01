@@ -27,6 +27,7 @@ dependencies {
 
     compile 'com.github.sundeepk:compact-calendar-view:1.9.3'
     compile 'org.zakariya.stickyheaders:stickyheaders:0.7.5'
-    compile 'joda-time:joda-time:2.9.4'
+    compile 'com.getbase.android.db:library:0.13.1'
+    compile 'com.parse.bolts:bolts-tasks:1.4.0'
 
 }
