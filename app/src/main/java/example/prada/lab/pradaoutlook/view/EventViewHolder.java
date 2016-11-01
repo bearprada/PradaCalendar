@@ -6,6 +6,8 @@ import android.widget.TextView;
 
 import org.zakariya.stickyheaders.SectioningAdapter;
 
+import java.text.SimpleDateFormat;
+
 import example.prada.lab.pradaoutlook.R;
 import example.prada.lab.pradaoutlook.model.POEvent;
 
@@ -14,6 +16,8 @@ import example.prada.lab.pradaoutlook.model.POEvent;
  */
 
 public class EventViewHolder extends SectioningAdapter.ItemViewHolder {
+    private static final SimpleDateFormat sDateFormat = new SimpleDateFormat("h:m a");
+
     private final TextView mTxtDuration;
     private final TextView mTxtTitle;
     private final TextView mTxtLocation;
@@ -29,7 +33,7 @@ public class EventViewHolder extends SectioningAdapter.ItemViewHolder {
 
     public void bind(POEvent event) {
         mTxtTitle.setText(event.getTitle());
-        mTxtTime.setText("8:00 PM"); // FIXME
+        mTxtTime.setText(sDateFormat.format(event.getTo()));
         String durationStr = event.getDurationString();
         if (!TextUtils.isEmpty(durationStr)) {
             mTxtDuration.setText(durationStr);

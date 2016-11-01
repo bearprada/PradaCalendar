@@ -1,7 +1,10 @@
 package example.prada.lab.pradaoutlook.model;
 
-import java.util.Date;
+import android.graphics.Color;
+import android.support.annotation.ColorInt;
 
+import java.util.Date;
+import com.github.sundeepk.compactcalendarview.domain.Event;
 /**
  * Created by prada on 10/27/16.
  */
@@ -49,5 +52,14 @@ public class POEvent {
             return hour + "h";
         }
         return hour + "h" + min + "m";
+    }
+
+    public Event toEvent() {
+        return new Event(getColorRes(), getFrom().getTime(), this);
+    }
+
+    private @ColorInt int getColorRes() {
+        // return Color.parseColor("#FF4081"); // TODO support different color later
+        return Color.parseColor("#00FF00");
     }
 }

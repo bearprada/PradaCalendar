@@ -8,10 +8,12 @@ import android.view.ViewGroup;
 import org.zakariya.stickyheaders.SectioningAdapter;
 
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-import example.prada.lab.pradaoutlook.model.MockEventStore;
+import example.prada.lab.pradaoutlook.store.EventStoreFactory;
+import example.prada.lab.pradaoutlook.store.IEventStore;
 import example.prada.lab.pradaoutlook.model.POEvent;
 import example.prada.lab.pradaoutlook.utils.Utility;
 import example.prada.lab.pradaoutlook.view.DayViewHolder;
@@ -28,25 +30,22 @@ public class AgendaAdapter extends SectioningAdapter {
     private final LayoutInflater mInflater;
     private final Calendar mFrom;
     private final Calendar mTo;
-    private final MockEventStore mStore;
-    private OnAgendaScrolledListener mListener;
+    private final IEventStore mStore;
 
     public AgendaAdapter(@NonNull Context ctx, @NonNull Calendar from, @NonNull Calendar to) {
         mInflater = LayoutInflater.from(ctx);
         if (to.before(from)) {
-            new IllegalArgumentException("the start of date is wrong, it should be before then this time " + to.toString());
+            new IllegalArgumentException(
+                "the start of date is wrong, it should be before then this time " + to.toString());
         }
         mTo = to;
         mFrom = from;
-        mStore = MockEventStore.getInstance(ctx);
-    }
-
-    public void setListener(OnAgendaScrolledListener listener) {
-        mListener = listener;
+        mStore = EventStoreFactory.getInstance(ctx);
     }
 
     @Override
-    public void onBindItemViewHolder(ItemViewHolder viewHolder, int sectionIndex, int itemIndex, int itemUserType) {
+    public void onBindItemViewHolder(ItemViewHolder viewHolder, int sectionIndex, int itemIndex,
+                                     int itemUserType) {
         switch (itemUserType) {
             case ITEM_TYPE_EVENT:
                 List<POEvent> events = queryEvents(sectionIndex);
@@ -65,7 +64,8 @@ public class AgendaAdapter extends SectioningAdapter {
     public ItemViewHolder onCreateItemViewHolder(ViewGroup parent, int itemUserType) {
         switch (itemUserType) {
             case ITEM_TYPE_NO_EVENT:
-                return new NoEventViewHolder(mInflater.inflate(R.layout.item_no_event, parent, false));
+                return new NoEventViewHolder(
+                    mInflater.inflate(R.layout.item_no_event, parent, false));
             case ITEM_TYPE_EVENT:
             default:
                 return new EventViewHolder(mInflater.inflate(R.layout.item_event, parent, false));
@@ -78,7 +78,8 @@ public class AgendaAdapter extends SectioningAdapter {
     }
 
     @Override
-    public void onBindHeaderViewHolder(HeaderViewHolder viewHolder, int sectionIndex, int headerUserType) {
+    public void onBindHeaderViewHolder(HeaderViewHolder viewHolder, int sectionIndex,
+                                       int headerUserType) {
         DayViewHolder vh = (DayViewHolder) viewHolder;
         Calendar c = (Calendar) mFrom.clone();
         c.add(Calendar.HOUR, 24 * sectionIndex);
@@ -103,9 +104,9 @@ public class AgendaAdapter extends SectioningAdapter {
     private long[] convertSectionIdxToTimestampRange(int sectionIdx) {
         Calendar c = (Calendar) mFrom.clone();
         c.add(Calendar.HOUR, 24 * sectionIdx);
-        long t1 =  c.getTimeInMillis();
+        long t1 = c.getTimeInMillis();
         c.add(Calendar.HOUR, 24);
-        return new long[] {t1, c.getTimeInMillis()};
+        return new long[]{t1, c.getTimeInMillis()};
     }
 
     private boolean hasEvent(int sectionIndex) {
@@ -130,7 +131,19 @@ public class AgendaAdapter extends SectioningAdapter {
         return numEvents == 0 ? 1 : numEvents;
     }
 
-    public interface OnAgendaScrolledListener {
-        void onAgendaMoveToDate(Date date);
+    public void updateEvent(POEvent event) {
+        // TODO update the range of the time frame
+        notifySectionDataSetChanged(findSectionIndex(event.getFrom()));
+    }
+
+    public static final int SECONDS_IN_A_DAY = 3600 * 24;
+
+    private int findSectionIndex(@NonNull Date date) {
+        long seconds = (date.getTime() - mFrom.getTimeInMillis()) / 1000;
+        return (int) Math.floor(seconds / SECONDS_IN_A_DAY);
+    }
+
+    public int findSectionPosition(@NonNull Date date) {
+        return getAdapterPositionForSectionHeader(findSectionIndex(date));
     }
 }
