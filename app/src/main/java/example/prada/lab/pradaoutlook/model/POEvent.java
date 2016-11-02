@@ -1,10 +1,16 @@
 package example.prada.lab.pradaoutlook.model;
 
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.graphics.Color;
 import android.support.annotation.ColorInt;
 
 import java.util.Date;
 import com.github.sundeepk.compactcalendarview.domain.Event;
+
+import example.prada.lab.pradaoutlook.db.OutlookDbHelper;
+
 /**
  * Created by prada on 10/27/16.
  */
@@ -19,6 +25,13 @@ public class POEvent {
         mLabel = label;
         mFrom = from;
         mTo = to;
+    }
+
+    public POEvent(ContentValues values) {
+        mTitle = values.getAsString(OutlookDbHelper.EVENT_TITLE);
+        mLabel = values.getAsString(OutlookDbHelper.EVENT_LABEL);
+        mFrom = new Date(values.getAsLong(OutlookDbHelper.EVENT_START_TIME));
+        mTo = new Date(values.getAsLong(OutlookDbHelper.EVENT_END_TIME));
     }
 
     public String getTitle() {
@@ -61,5 +74,20 @@ public class POEvent {
     private @ColorInt int getColorRes() {
         // return Color.parseColor("#FF4081"); // TODO support different color later
         return Color.parseColor("#00FF00");
+    }
+
+    public static POEvent createFromCursor(Cursor cursor) {
+        ContentValues values = new ContentValues();
+        DatabaseUtils.cursorRowToContentValues(cursor, values);
+        return new POEvent(values);
+    }
+
+    public ContentValues getContentValues() {
+        ContentValues cv = new ContentValues();
+        cv.put(OutlookDbHelper.EVENT_TITLE, mTitle);
+        cv.put(OutlookDbHelper.EVENT_LABEL, mLabel);
+        cv.put(OutlookDbHelper.EVENT_START_TIME, mFrom.getTime());
+        cv.put(OutlookDbHelper.EVENT_END_TIME, mTo.getTime());
+        return cv;
     }
 }

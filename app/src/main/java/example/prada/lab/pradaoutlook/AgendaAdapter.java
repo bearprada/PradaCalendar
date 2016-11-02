@@ -48,9 +48,7 @@ public class AgendaAdapter extends SectioningAdapter {
                                      int itemUserType) {
         switch (itemUserType) {
             case ITEM_TYPE_EVENT:
-                List<POEvent> events = queryEvents(sectionIndex);
-                EventViewHolder vh = (EventViewHolder) viewHolder;
-                vh.bind(events.get(itemIndex));
+                ((EventViewHolder) viewHolder).bind(queryEvent(sectionIndex, itemIndex));
                 break;
             case ITEM_TYPE_NO_EVENT:
                 break; // DO NOTHING
@@ -114,9 +112,9 @@ public class AgendaAdapter extends SectioningAdapter {
         return mStore.hasEvents(range[0], range[1]);
     }
 
-    private List<POEvent> queryEvents(int sectionIndex) {
+    private POEvent queryEvent(int sectionIndex, int itemIndex) {
         long[] range = convertSectionIdxToTimestampRange(sectionIndex);
-        return mStore.queryEvents(range[0], range[1]);
+        return mStore.queryEvent(range[0], range[1], itemIndex);
     }
 
     @Override

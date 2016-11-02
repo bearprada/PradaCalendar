@@ -17,6 +17,8 @@ public interface IEventStore {
 
     @NonNull List<POEvent> queryEvents(long t1, long t2);
 
+    @NonNull POEvent queryEvent(long t1, long t2, int index);
+
     int countEvents(long t1, long t2);
 
     boolean hasEvents(long t1, long t2);

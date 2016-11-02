@@ -41,6 +41,16 @@ public class MockEventStore extends BaseEventStore {
         return mTestData.subList(index[0], index[1]);
     }
 
+    @NonNull
+    @Override
+    public POEvent queryEvent(long t1, long t2, int index) {
+        List<POEvent> events = queryEvents(t1, t2);
+        if (events.size() <= index) {
+            throw new IllegalArgumentException("we can't find the data from index " + index);
+        }
+        return events.get(index);
+    }
+
     @Override
     public int countEvents(long t1, long t2) {
         return queryEvents(t1, t2).size();

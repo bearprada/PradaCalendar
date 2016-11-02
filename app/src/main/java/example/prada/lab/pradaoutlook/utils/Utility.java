@@ -82,7 +82,6 @@ public class Utility {
                 return "DECEMBER";
             default:
                 throw new IllegalArgumentException("the month should be between 0 - 11, but it's " + month);
-
         }
     }
 }

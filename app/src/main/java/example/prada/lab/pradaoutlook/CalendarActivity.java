@@ -21,10 +21,10 @@ import java.util.concurrent.Callable;
 
 import bolts.Continuation;
 import bolts.Task;
-import example.prada.lab.pradaoutlook.store.EventStoreFactory;
 import example.prada.lab.pradaoutlook.model.IEventDataUpdatedListener;
-import example.prada.lab.pradaoutlook.store.IEventStore;
 import example.prada.lab.pradaoutlook.model.POEvent;
+import example.prada.lab.pradaoutlook.store.EventStoreFactory;
+import example.prada.lab.pradaoutlook.store.IEventStore;
 import example.prada.lab.pradaoutlook.utils.Utility;
 
 public class CalendarActivity extends AppCompatActivity implements CompactCalendarView.CompactCalendarViewListener,
@@ -34,6 +34,7 @@ public class CalendarActivity extends AppCompatActivity implements CompactCalend
     private CompactCalendarView mCalendarView;
     private RecyclerView mAgendaView;
     private CoordinatorLayout mCoordinator;
+//    private ContentObserver mContentObserver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,49 +48,69 @@ public class CalendarActivity extends AppCompatActivity implements CompactCalend
         StickyHeaderLayoutManager lm = new StickyHeaderLayoutManager();
         mAgendaView.setLayoutManager(lm);
 
-        final IEventStore store = EventStoreFactory.getInstance(this);
-        Calendar from = store.getFirstEventTime();
-        Calendar to = store.getLatestEventTime();
-        store.addListener(this);
-
-        mAdapter = new AgendaAdapter(this, from, to);
-        mAgendaView.setAdapter(mAdapter);
-
         mCalendarView = (CompactCalendarView) findViewById(R.id.calendar_view);
         mCalendarView.setListener(this);
 
         setTitle(getTitleString(Calendar.getInstance()));
 
+//        mContentObserver = new ContentObserver(new Handler()) {
+//            @Override
+//            public void onChange(boolean selfChange, Uri uri) {
+//                super.onChange(selfChange, uri);
+//                // TODO update the data
+//            }
+//        };
+        final IEventStore store = EventStoreFactory.getInstance(this);
+        store.addListener(CalendarActivity.this);
+
         // inject the test data
         // TODO inserting the test data when the store is empty
+        // generate the 200 events between last two months to now
+        final int NUM_EVENTS = 200;
+        Calendar c1 = Calendar.getInstance();
+        c1.set(Calendar.MONTH, c1.get(Calendar.MONTH) - 2);
+        Calendar c2 = Calendar.getInstance();
+        final long t1 = c1.getTimeInMillis();
+        long t2 = c2.getTimeInMillis();
+        final long gap = (t2 - t1) / NUM_EVENTS;
+
+        mAdapter = new AgendaAdapter(getApplicationContext(), c1, c2);
+        mAgendaView.setAdapter(mAdapter);
+
         Task.callInBackground(new Callable<List<POEvent>>() {
             @Override
             public List<POEvent> call() throws Exception {
                 java.util.Random random = new java.util.Random();
-                // generate the 200 events between last two months to now
-                final int NUM_EVENTS = 200;
-                Calendar c1 = Calendar.getInstance();
-                c1.set(Calendar.MONTH, c1.get(Calendar.MONTH) - 2);
-                Calendar c2 = Calendar.getInstance();
-                long t1 = c1.getTimeInMillis();
-                long t2 = c2.getTimeInMillis();
-                long gap = (t2 - t1) / NUM_EVENTS;
                 List<POEvent> datas = new ArrayList<>();
                 for (int i = 0; i < NUM_EVENTS ; i++) {
                     long eventT1 = t1 + (i * gap);
                     long eventT2 = eventT1 + (random.nextInt(3600) * 1000);
                     datas.add(new POEvent("Event-" + random.nextInt(10000), "TODO", new Date(eventT1), new Date(eventT2)));
                 }
+                store.addEvents(datas);
                 return datas;
             }
         }).onSuccess(new Continuation<List<POEvent>, Void>() {
             @Override
             public Void then(Task<List<POEvent>> task) throws Exception {
-                store.addEvents(task.getResult());
+                Snackbar.make(mCoordinator, "import the events successful", Snackbar.LENGTH_SHORT).show();
                 return null;
             }
         }, Task.UI_THREAD_EXECUTOR);
     }
+
+//    @Override
+//    protected void onResume() {
+//        super.onResume();
+//        getContentResolver().registerContentObserver(EventContentProvider.EVENT_URI, true,
+//                                                     mContentObserver);
+//    }
+//
+//    @Override
+//    protected void onPause() {
+//        super.onPause();
+//        getContentResolver().unregisterContentObserver(mContentObserver);
+//    }
 
     @Override
     protected void onDestroy() {
@@ -98,7 +119,9 @@ public class CalendarActivity extends AppCompatActivity implements CompactCalend
     }
 
     private String getTitleString(Calendar calendar) {
-        return calendar.get(Calendar.YEAR) + "" + Utility.convertMonthStr(calendar.get(Calendar.MONTH));
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        return String.format("%s %s", year, Utility.convertMonthStr(month).substring(0, 3));
     }
 
     @Override

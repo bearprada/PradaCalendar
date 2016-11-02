@@ -10,6 +10,5 @@ public class MockEventStoreTest {
     @Test
     public void test0001() throws Exception {
         MockEventStore store = MockEventStore.getInstance();
-        store.countEvents()
     }
 }

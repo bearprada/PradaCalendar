@@ -19,6 +19,7 @@ public class OutlookDbHelper extends SQLiteOpenHelper {
     public static final String EVENT_TITLE = "title";
     public static final String EVENT_LABEL = "label";
 
+    public static final String DEFAULT_ORDER_BY = EVENT_START_TIME + " DESC";
 
     public OutlookDbHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
