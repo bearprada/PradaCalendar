@@ -9,8 +9,11 @@ import java.util.Calendar;
 public class Utility {
 
     public static int getDaysBetween(Calendar cal1, Calendar cal2) {
+        if (cal1 == null || cal2 == null) {
+            return 0;
+        }
         if (cal1.after(cal2)) {
-            return 0; // TODO throw exception
+            return 0;
         }
         int year1 = cal1.get(Calendar.YEAR);
         int year2 = cal2.get(Calendar.YEAR);

@@ -1,15 +1,14 @@
 package example.prada.lab.pradaoutlook.store;
 
-import android.content.Context;
-import android.support.annotation.NonNull;
+import android.database.Cursor;
+import android.database.MatrixCursor;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.Comparator;
+import java.util.TreeSet;
 
+import example.prada.lab.pradaoutlook.db.OutlookDbHelper;
 import example.prada.lab.pradaoutlook.model.IEventDataUpdatedListener;
 import example.prada.lab.pradaoutlook.model.POEvent;
 
@@ -19,7 +18,12 @@ import example.prada.lab.pradaoutlook.model.POEvent;
 
 public class MockEventStore extends BaseEventStore {
     private static MockEventStore sStore;
-    private final List<POEvent> mTestData = new ArrayList<>();
+    private final TreeSet<POEvent> mTestData = new TreeSet<>(new Comparator<POEvent>() {
+        @Override
+        public int compare(POEvent o1, POEvent o2) {
+            return (int) (o2.getFrom().getTime() - o1.getFrom().getTime()); // FIXME the rule is wrong
+        }
+    });
 
     static MockEventStore getInstance() {
         if (sStore == null) {
@@ -31,85 +35,70 @@ public class MockEventStore extends BaseEventStore {
     private MockEventStore() {
     }
 
-    // TODO it's a pool implementation for testing data
     @Override
-    @NonNull public List<POEvent> queryEvents(long timestamp1, long timestamp2) {
-        int[] index = searchEvents(timestamp1, timestamp2);
-        if (!internalHasEvents(index[0], index[1])) {
-            return Collections.EMPTY_LIST;
+    public Cursor getEvents() {
+        return createCursor();
+    }
+
+    private Cursor createCursor() {
+        MatrixCursor cursor = new MatrixCursor(OutlookDbHelper.COLUMNS);
+        for (POEvent e : mTestData) {
+            cursor.newRow()
+                  .add(e.getId())
+                  .add(e.getFrom().getTime())
+                  .add(e.getTo().getTime())
+                  .add(e.getTitle())
+                  .add(e.getLabel());
         }
-        return mTestData.subList(index[0], index[1]);
-    }
-
-    @NonNull
-    @Override
-    public POEvent queryEvent(long t1, long t2, int index) {
-        List<POEvent> events = queryEvents(t1, t2);
-        if (events.size() <= index) {
-            throw new IllegalArgumentException("we can't find the data from index " + index);
-        }
-        return events.get(index);
+        cursor.moveToFirst();
+        return cursor;
     }
 
     @Override
-    public int countEvents(long t1, long t2) {
-        return queryEvents(t1, t2).size();
+    public int countEvents() {
+        return mTestData.size();
     }
 
-    private int[] searchEvents(long t1, long t2) {
-        int[] index = new int[] { -1, -1 };
-        for (int i = 0; i < mTestData.size(); i++) {
-            POEvent e = mTestData.get(i);
-            if (e.getFrom().getTime() >= t1 && index[0] == -1) {
-                index[0] = i;
+    @Override
+    public boolean hasEvents(long t1, long t2) {
+        int start = -1;
+        int end = -1;
+        int i = 0;
+        for(POEvent e : mTestData) {
+            if (e.getFrom().getTime() >= t1 && start == -1) {
+                start = i;
             }
-            if (e.getTo().getTime() >= t2 && index[1] == -1) {
-                index[1] = i;
+            if (e.getTo().getTime() >= t2 && end == -1) {
+                end = i;
             }
             if (e.getFrom().getTime() > t2) {
                 break;
             }
+            i++;
         }
-        return index;
-    }
-
-    @Override
-    public boolean hasEvents(long timestamp1, long timestamp2) {
-        int[] index = searchEvents(timestamp1, timestamp2);
-        return internalHasEvents(index[0], index[1]);
+        return end > start && start != end && start != -1 && end != -1;
     }
 
     @Override
     public Calendar getFirstEventTime() {
         Calendar c = Calendar.getInstance();
-        c.setTime(mTestData.get(0).getFrom());
+        c.setTime(mTestData.first().getFrom());
         return c;
     }
 
     @Override
     public Calendar getLatestEventTime() {
         Calendar c = Calendar.getInstance();
-        c.setTime(mTestData.get(mTestData.size() - 1).getTo());
+        c.setTime(mTestData.last().getTo());
         return c;
-    }
-
-    @Override
-    public void addEvent(POEvent event) {
-        mTestData.add(event);
     }
 
     @Override
     public void addEvents(Collection<POEvent> events) {
         mTestData.addAll(events);
+        Cursor cursor = createCursor();
         for (IEventDataUpdatedListener listener : mListeners) {
-            listener.onEventsInsert(events);
+            listener.onEventsInsert(cursor);
         }
-    }
-
-    private boolean internalHasEvents(int start, int end) {
-        if (end <= start) {
-            return false;
-        }
-        return start != end && start != -1 && end != -1;
     }
 }

@@ -52,7 +52,7 @@ public class EventContentProvider extends ContentProvider {
                                 null, null, sortOrder);
             case EVENT_WITH_ID:
                 long id = ContentUris.parseId(uri);
-                return db.query(OutlookDbHelper.NAME, projection, OutlookDbHelper.ID + "=" + id,
+                return db.query(OutlookDbHelper.NAME, projection, OutlookDbHelper.EVENT_ID + "=" + id,
                                 null, null, null, sortOrder);
             default:
                 return null;
@@ -88,7 +88,7 @@ public class EventContentProvider extends ContentProvider {
                 long id = ContentUris.parseId(uri);
                 try {
                     db.beginTransaction();
-                    int totalDeletedRow = db.delete(OutlookDbHelper.NAME, OutlookDbHelper.ID + "=" + id, null);
+                    int totalDeletedRow = db.delete(OutlookDbHelper.NAME, OutlookDbHelper.EVENT_ID + "=" + id, null);
                     db.setTransactionSuccessful();
                     return totalDeletedRow;
                 } finally {
@@ -106,7 +106,7 @@ public class EventContentProvider extends ContentProvider {
                 long id = ContentUris.parseId(uri);
                 SQLiteDatabase db = mDbHelper.getWritableDatabase();
                 int changeRows = db.update(OutlookDbHelper.NAME, values,
-                                           OutlookDbHelper.ID + "=" + id, selectionArgs);
+                                           OutlookDbHelper.EVENT_ID + "=" + id, selectionArgs);
                 mResolver.notifyChange(uri, null);
                 return changeRows;
         }

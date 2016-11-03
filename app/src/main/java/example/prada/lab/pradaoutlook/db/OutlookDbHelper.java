@@ -13,11 +13,20 @@ public class OutlookDbHelper extends SQLiteOpenHelper {
     private static final int DATABASE_VERSION = 1;
 
     public static final String NAME = "events";
-    public static final String ID = "_id";
+
+    public static final String EVENT_ID = "_id";
     public static final String EVENT_START_TIME = "start_time";
     public static final String EVENT_END_TIME = "end_time";
     public static final String EVENT_TITLE = "title";
     public static final String EVENT_LABEL = "label";
+
+    public static final String[] COLUMNS = new String[] {
+        EVENT_ID,
+        EVENT_START_TIME,
+        EVENT_END_TIME,
+        EVENT_TITLE,
+        EVENT_LABEL
+    };
 
     public static final String DEFAULT_ORDER_BY = EVENT_START_TIME + " DESC";
 
@@ -30,7 +39,7 @@ public class OutlookDbHelper extends SQLiteOpenHelper {
         db.execSQL(
             "create table " + NAME
             + " ("
-            + ID + " INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT"
+            + EVENT_ID + " INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT"
             + ", " + EVENT_START_TIME + " LONG NOT NULL"
             + ", " + EVENT_END_TIME + " LONG NOT NULL"
             + ", " + EVENT_TITLE + " TEXT NOT NULL"

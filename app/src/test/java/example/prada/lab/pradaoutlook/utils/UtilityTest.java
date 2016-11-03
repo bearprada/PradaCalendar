@@ -1,7 +1,5 @@
 package example.prada.lab.pradaoutlook.utils;
 
-import android.text.TextUtils;
-
 import junit.framework.Assert;
 
 import org.junit.Test;
@@ -26,28 +24,47 @@ public class UtilityTest {
         Assert.assertEquals(366, days);
     }
 
+    // FIXME
     @Test
-    public void testDaysBetween10Year() throws Exception {
+    public void testDaysBetweenLargeYear() throws Exception {
         Calendar c1 = Calendar.getInstance();
-        c1.set(Calendar.YEAR, 2010);
-        c1.set(Calendar.DAY_OF_YEAR, 1);
+        c1.set(Calendar.YEAR, 1000);
+        c1.set(Calendar.MONTH, Calendar.JULY);
+        c1.set(Calendar.DAY_OF_MONTH, 1);
         Calendar c2 = Calendar.getInstance();
-        c2.set(Calendar.YEAR, 2020);
-        c2.set(Calendar.DAY_OF_YEAR, 1);
-        int days = Utility.getDaysBetween(c1, c2);
-        Assert.assertEquals(3652, days);
+        c2.set(Calendar.YEAR, 3000);
+        c2.set(Calendar.MONTH, Calendar.JULY);
+        c2.set(Calendar.DAY_OF_MONTH, 1);
+        Assert.assertEquals(730479, Utility.getDaysBetween(c1, c2));
+        // 365243 vs 365237 > 6   (365250...+7...+13)
+        // 730485 vs 730479 > 6   (730499...+14...+20)
+    }
+
+    @Test
+    public void testDaysTheSameYear() throws Exception {
+        Calendar c1 = Calendar.getInstance();
+        c1.set(Calendar.YEAR, 2080);
+        c1.set(Calendar.MONTH, Calendar.MARCH);
+        c1.set(Calendar.DAY_OF_MONTH, 1);
+        Calendar c2 = Calendar.getInstance();
+        c2.set(Calendar.YEAR, 2080);
+        c2.set(Calendar.MONTH, Calendar.JULY);
+        c2.set(Calendar.DAY_OF_MONTH, 15);
+        Assert.assertEquals(136, Utility.getDaysBetween(c1, c2));
     }
 
     @Test
     public void testDaysBetweenHalfYear() throws Exception {
         Calendar c1 = Calendar.getInstance();
         c1.set(Calendar.YEAR, 2000);
-        c1.set(Calendar.DAY_OF_YEAR, 100);
+        c1.set(Calendar.MONTH, Calendar.JULY);
+        c1.set(Calendar.DAY_OF_MONTH, 15); // 366 - (31+29+31+30+31+30+15) = 169
         Calendar c2 = Calendar.getInstance();
         c2.set(Calendar.YEAR, 2001);
-        c2.set(Calendar.DAY_OF_YEAR, 100);
+        c2.set(Calendar.MONTH, Calendar.JULY);
+        c2.set(Calendar.DAY_OF_MONTH, 15); // (31+28+31+30+31+30+15) = 196
         int days = Utility.getDaysBetween(c1, c2);
-        Assert.assertEquals(366, days);
+        Assert.assertEquals(365, days);
     }
 
     @Test

@@ -4,14 +4,11 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import android.support.annotation.NonNull;
 
 import com.getbase.android.db.provider.ProviderAction;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.Callable;
 
 import bolts.Task;
@@ -41,73 +38,35 @@ public class ContentProviderEventStore extends BaseEventStore {
         mResolver = ctx.getContentResolver();
     }
 
-    // TODO add the content resolver listener
-
-    @NonNull
     @Override
-    public List<POEvent> queryEvents(long t1, long t2) {
-        Cursor cursor = ProviderAction
+    public Cursor getEvents() {
+        return ProviderAction
             .query(EventContentProvider.EVENT_URI)
-            .projection(OutlookDbHelper.ID,
+            .projection(OutlookDbHelper.EVENT_ID,
                         OutlookDbHelper.EVENT_TITLE,
                         OutlookDbHelper.EVENT_LABEL,
                         OutlookDbHelper.EVENT_START_TIME,
                         OutlookDbHelper.EVENT_END_TIME)
-            .orderBy(OutlookDbHelper.DEFAULT_ORDER_BY)
-            .where(OutlookDbHelper.EVENT_START_TIME + " > " + t1 + " OR "+
-                   OutlookDbHelper.EVENT_END_TIME + " < " + t2)
+            .orderBy(OutlookDbHelper.EVENT_START_TIME + " ASC")
             .perform(mResolver);
-        List<POEvent> list = new ArrayList<>();
-        if (cursor.moveToFirst()) {
-            list.add(POEvent.createFromCursor(cursor));
-        }
-        while (cursor.moveToNext()) {
-            list.add(POEvent.createFromCursor(cursor));
-        }
-        cursor.close();
-        return list;
-    }
-
-    @NonNull
-    @Override
-    public POEvent queryEvent(long t1, long t2, int index) {
-        Cursor cursor = ProviderAction
-            .query(EventContentProvider.EVENT_URI)
-            .projection(OutlookDbHelper.ID,
-                        OutlookDbHelper.EVENT_TITLE,
-                        OutlookDbHelper.EVENT_LABEL,
-                        OutlookDbHelper.EVENT_START_TIME,
-                        OutlookDbHelper.EVENT_END_TIME)
-            .orderBy(OutlookDbHelper.DEFAULT_ORDER_BY)
-            .where(OutlookDbHelper.EVENT_START_TIME + " > " + t1 + " OR "+
-                   OutlookDbHelper.EVENT_END_TIME + " < " + t2)
-            .perform(mResolver);
-        try {
-            if (!cursor.moveToFirst()) {
-                return null;
-            }
-            if (cursor.getCount() < index || !cursor.moveToPosition(index)) {
-                return null;
-            }
-            return POEvent.createFromCursor(cursor);
-        } finally {
-            cursor.close();
-        }
     }
 
     @Override
-    public int countEvents(long t1, long t2) {
+    public int countEvents() {
         return ProviderAction.query(EventContentProvider.EVENT_URI)
-                             .projection(OutlookDbHelper.ID)
-                             .where(OutlookDbHelper.EVENT_START_TIME + " > " + t1 + " OR "+
-                                    OutlookDbHelper.EVENT_END_TIME + " < " + t2)
+                             .projection(OutlookDbHelper.EVENT_ID)
                              .perform(mResolver)
                              .getCount();
     }
 
     @Override
     public boolean hasEvents(long t1, long t2) {
-        return countEvents(t1, t2) > 0;
+        return ProviderAction.query(EventContentProvider.EVENT_URI)
+                             .projection(OutlookDbHelper.EVENT_ID)
+                             .where(OutlookDbHelper.EVENT_START_TIME + " > " + t1 + " OR "+
+                                    OutlookDbHelper.EVENT_END_TIME + " < " + t2)
+                             .perform(mResolver)
+                             .getCount() > 0;
     }
 
     @Override
@@ -147,29 +106,15 @@ public class ContentProviderEventStore extends BaseEventStore {
     }
 
     @Override
-    public void addEvent(final POEvent event) {
-        insertEvent(event);
-        Task.call(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                for (IEventDataUpdatedListener l : mListeners) {
-                    l.onEventInsert(event);
-                }
-                return null;
-            }
-        }, Task.UI_THREAD_EXECUTOR);
-    }
-
-    @Override
     public void addEvents(final Collection<POEvent> events) {
         for (POEvent event : events) {
-            Uri uri = insertEvent(event);
+            insertEvent(event);
         }
         Task.call(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
                 for (IEventDataUpdatedListener l : mListeners) {
-                    l.onEventsInsert(events);
+                    l.onEventsInsert(getEvents());
                 }
                 return null;
             }

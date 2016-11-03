@@ -1,6 +1,8 @@
 package example.prada.lab.pradaoutlook;
 
+import android.database.Cursor;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -14,7 +16,6 @@ import org.zakariya.stickyheaders.StickyHeaderLayoutManager;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -34,7 +35,6 @@ public class CalendarActivity extends AppCompatActivity implements CompactCalend
     private CompactCalendarView mCalendarView;
     private RecyclerView mAgendaView;
     private CoordinatorLayout mCoordinator;
-//    private ContentObserver mContentObserver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +43,9 @@ public class CalendarActivity extends AppCompatActivity implements CompactCalend
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        final IEventStore store = EventStoreFactory.getInstance(this);
+        store.addListener(CalendarActivity.this);
+
         mCoordinator = (CoordinatorLayout) findViewById(R.id.coordinator);
         mAgendaView = (RecyclerView) findViewById(R.id.agenda_list);
         StickyHeaderLayoutManager lm = new StickyHeaderLayoutManager();
@@ -50,45 +53,39 @@ public class CalendarActivity extends AppCompatActivity implements CompactCalend
 
         mCalendarView = (CompactCalendarView) findViewById(R.id.calendar_view);
         mCalendarView.setListener(this);
+        updateCalenderView(store.getEvents());
 
         setTitle(getTitleString(Calendar.getInstance()));
 
-//        mContentObserver = new ContentObserver(new Handler()) {
-//            @Override
-//            public void onChange(boolean selfChange, Uri uri) {
-//                super.onChange(selfChange, uri);
-//                // TODO update the data
-//            }
-//        };
-        final IEventStore store = EventStoreFactory.getInstance(this);
-        store.addListener(CalendarActivity.this);
-
-        // inject the test data
-        // TODO inserting the test data when the store is empty
-        // generate the 200 events between last two months to now
-        final int NUM_EVENTS = 200;
-        Calendar c1 = Calendar.getInstance();
-        c1.set(Calendar.MONTH, c1.get(Calendar.MONTH) - 2);
-        Calendar c2 = Calendar.getInstance();
-        final long t1 = c1.getTimeInMillis();
-        long t2 = c2.getTimeInMillis();
-        final long gap = (t2 - t1) / NUM_EVENTS;
-
-        mAdapter = new AgendaAdapter(getApplicationContext(), c1, c2);
+        mAdapter = new AgendaAdapter(this);
         mAgendaView.setAdapter(mAdapter);
 
+        int numOfEvents = store.countEvents();
+        // inserting the test data when the store is empty
+        if (numOfEvents > 0) {
+            return;
+        }
         Task.callInBackground(new Callable<List<POEvent>>() {
             @Override
             public List<POEvent> call() throws Exception {
+                // generate the 200 events between last two months to now
+                final int NUM_EVENTS = 200;
+                Calendar c1 = Calendar.getInstance();
+                c1.set(Calendar.MONTH, c1.get(Calendar.MONTH) - 2);
+                Calendar c2 = Calendar.getInstance();
+                final long t1 = c1.getTimeInMillis();
+                long t2 = c2.getTimeInMillis();
+                final long gap = (t2 - t1) / NUM_EVENTS;
+
                 java.util.Random random = new java.util.Random();
-                List<POEvent> datas = new ArrayList<>();
+                List<POEvent> data = new ArrayList<>();
                 for (int i = 0; i < NUM_EVENTS ; i++) {
                     long eventT1 = t1 + (i * gap);
                     long eventT2 = eventT1 + (random.nextInt(3600) * 1000);
-                    datas.add(new POEvent("Event-" + random.nextInt(10000), "TODO", new Date(eventT1), new Date(eventT2)));
+                    data.add(new POEvent("Event-" + random.nextInt(10000), "TODO", new Date(eventT1), new Date(eventT2)));
                 }
-                store.addEvents(datas);
-                return datas;
+                store.addEvents(data);
+                return data;
             }
         }).onSuccess(new Continuation<List<POEvent>, Void>() {
             @Override
@@ -98,19 +95,6 @@ public class CalendarActivity extends AppCompatActivity implements CompactCalend
             }
         }, Task.UI_THREAD_EXECUTOR);
     }
-
-//    @Override
-//    protected void onResume() {
-//        super.onResume();
-//        getContentResolver().registerContentObserver(EventContentProvider.EVENT_URI, true,
-//                                                     mContentObserver);
-//    }
-//
-//    @Override
-//    protected void onPause() {
-//        super.onPause();
-//        getContentResolver().unregisterContentObserver(mContentObserver);
-//    }
 
     @Override
     protected void onDestroy() {
@@ -154,31 +138,19 @@ public class CalendarActivity extends AppCompatActivity implements CompactCalend
     }
 
     @Override
-    public void onEventsInsert(Collection<POEvent> events) {
-        mAdapter.notifyDataSetChanged(); // FIXME only update the sections that's in the range of events
-        for (POEvent e : events) {
+    public void onEventsInsert(Cursor cursor) {
+        // FIXME only update the sections that's in the range of events
+        mAdapter.updateEvents();
+        updateCalenderView(cursor);
+    }
+
+    private void updateCalenderView(@NonNull Cursor cursor) {
+        cursor.moveToFirst();
+        mCalendarView.removeAllEvents();
+        while(cursor.moveToNext()) {
+            POEvent e = POEvent.createFromCursor(cursor);
             mCalendarView.addEvent(e.toEvent(), false);
         }
         mCalendarView.invalidate();
-    }
-
-    @Override
-    public void onEventInsert(POEvent event) {
-        mAdapter.updateEvent(event);
-        mCalendarView.addEvent(event.toEvent(), true);
-    }
-
-    @Override
-    public void onEventUpdate(POEvent event) {
-        mAdapter.updateEvent(event);
-        // FIXME is it the good way to implement it?
-        mCalendarView.removeEvent(event.toEvent(), false);
-        mCalendarView.addEvent(event.toEvent(), true);
-    }
-
-    @Override
-    public void onEventDelete(POEvent event) {
-        mAdapter.updateEvent(event);
-        mCalendarView.removeEvent(event.toEvent(), true);
     }
 }

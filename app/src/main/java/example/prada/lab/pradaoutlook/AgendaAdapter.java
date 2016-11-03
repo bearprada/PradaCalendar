@@ -1,14 +1,17 @@
 package example.prada.lab.pradaoutlook;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.support.annotation.NonNull;
+import android.support.v4.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import org.zakariya.stickyheaders.SectioningAdapter;
 
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -28,19 +31,20 @@ public class AgendaAdapter extends SectioningAdapter {
     private static final int ITEM_TYPE_NO_EVENT = 2;
 
     private final LayoutInflater mInflater;
-    private final Calendar mFrom;
-    private final Calendar mTo;
+    private final Calendar mFrom = Calendar.getInstance();
+    private final Calendar mTo = Calendar.getInstance();
     private final IEventStore mStore;
+    private Cursor mCursor = null;
 
-    public AgendaAdapter(@NonNull Context ctx, @NonNull Calendar from, @NonNull Calendar to) {
+    private LruCache<Integer, POEvent> mEventCache = new LruCache<>(256);
+
+    private final List<Integer> mNumOfItemOnSectionList = Collections.synchronizedList(new ArrayList<Integer>());
+
+    public AgendaAdapter(@NonNull Context ctx) {
         mInflater = LayoutInflater.from(ctx);
-        if (to.before(from)) {
-            new IllegalArgumentException(
-                "the start of date is wrong, it should be before then this time " + to.toString());
-        }
-        mTo = to;
-        mFrom = from;
         mStore = EventStoreFactory.getInstance(ctx);
+        mCursor = mStore.getEvents();
+        rebuildSectionsMetadata();
     }
 
     @Override
@@ -86,7 +90,7 @@ public class AgendaAdapter extends SectioningAdapter {
 
     @Override
     public int getNumberOfSections() {
-        return Utility.getDaysBetween(mFrom, mTo);
+        return mNumOfItemOnSectionList.size();
     }
 
     @Override
@@ -98,23 +102,53 @@ public class AgendaAdapter extends SectioningAdapter {
         }
     }
 
-    // TODO reuse the array with long values
-    private long[] convertSectionIdxToTimestampRange(int sectionIdx) {
-        Calendar c = (Calendar) mFrom.clone();
-        c.add(Calendar.HOUR, 24 * sectionIdx);
-        long t1 = c.getTimeInMillis();
-        c.add(Calendar.HOUR, 24);
-        return new long[]{t1, c.getTimeInMillis()};
+    private void rebuildSectionsMetadata() {
+        mEventCache.evictAll();
+        mNumOfItemOnSectionList.clear();
+
+        if (!mCursor.moveToFirst()) {
+            return;
+        }
+        POEvent firstEvent = POEvent.createFromCursor(mCursor);
+        mCursor.moveToLast();
+        POEvent latestEvent = POEvent.createFromCursor(mCursor);
+        mFrom.setTime(firstEvent.getFrom());
+        mTo.setTime(latestEvent.getTo());
+
+        int days = Utility.getDaysBetween(mFrom, mTo);
+        // Initial list
+        for (int i = 0; i < days; i++) {
+            mNumOfItemOnSectionList.add(0);
+        }
+        mCursor.moveToFirst();
+        while (mCursor.moveToNext()) {
+            POEvent e = POEvent.createFromCursor(mCursor);
+            int sectionIdx = findSectionIndex(e.getFrom());
+            mNumOfItemOnSectionList.set(sectionIdx, mNumOfItemOnSectionList.get(sectionIdx) + 1);
+        }
     }
 
     private boolean hasEvent(int sectionIndex) {
-        long[] range = convertSectionIdxToTimestampRange(sectionIndex);
-        return mStore.hasEvents(range[0], range[1]);
+        return mNumOfItemOnSectionList.get(sectionIndex) > 0;
     }
 
     private POEvent queryEvent(int sectionIndex, int itemIndex) {
-        long[] range = convertSectionIdxToTimestampRange(sectionIndex);
-        return mStore.queryEvent(range[0], range[1], itemIndex);
+        int cursorIndex = getCursorIndex(sectionIndex, itemIndex);
+        if (mEventCache.get(cursorIndex) != null) {
+            return mEventCache.get(cursorIndex);
+        }
+        mCursor.moveToPosition(cursorIndex);
+        POEvent event = POEvent.createFromCursor(mCursor);
+        mEventCache.put(cursorIndex, event);
+        return event;
+    }
+
+    private int getCursorIndex(int sectionIndex, int itemIndex) {
+        int cursorIndex = itemIndex;
+        for (int i = 0; i < sectionIndex ; i++) {
+            cursorIndex += mNumOfItemOnSectionList.get(i);
+        }
+        return cursorIndex;
     }
 
     @Override
@@ -124,15 +158,24 @@ public class AgendaAdapter extends SectioningAdapter {
 
     @Override
     public int getNumberOfItemsInSection(int sectionIndex) {
-        long[] range = convertSectionIdxToTimestampRange(sectionIndex);
-        int numEvents = mStore.countEvents(range[0], range[1]);
+        int numEvents = mNumOfItemOnSectionList.get(sectionIndex);
         return numEvents == 0 ? 1 : numEvents;
     }
 
-    public void updateEvent(POEvent event) {
-        // TODO update the range of the time frame
-        notifySectionDataSetChanged(findSectionIndex(event.getFrom()));
+
+    public void updateEvents() {
+        if (mCursor != null) {
+            mCursor.close();
+        }
+        mCursor = mStore.getEvents();
+        rebuildSectionsMetadata();
+        notifyDataSetChanged(); // FIXME
     }
+
+//    public void updateEvent(POEvent event) {
+//        // TODO update the range of the time frame
+//        notifySectionDataSetChanged(findSectionIndex(event.getFrom()));
+//    }
 
     public static final int SECONDS_IN_A_DAY = 3600 * 24;
 

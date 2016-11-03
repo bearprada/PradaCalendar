@@ -1,5 +1,6 @@
 package example.prada.lab.pradaoutlook.store;
 
+import android.database.Cursor;
 import android.support.annotation.NonNull;
 
 import java.util.Calendar;
@@ -15,19 +16,15 @@ import example.prada.lab.pradaoutlook.model.POEvent;
 
 public interface IEventStore {
 
-    @NonNull List<POEvent> queryEvents(long t1, long t2);
+    Cursor getEvents();
 
-    @NonNull POEvent queryEvent(long t1, long t2, int index);
-
-    int countEvents(long t1, long t2);
+    int countEvents();
 
     boolean hasEvents(long t1, long t2);
 
     Calendar getFirstEventTime();
 
     Calendar getLatestEventTime();
-
-    void addEvent(POEvent event);
 
     void addEvents(Collection<POEvent> events);
 

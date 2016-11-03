@@ -19,15 +19,18 @@ public class POEvent {
     private final String mLabel;
     private final Date mFrom;
     private final Date mTo;
+    private final Long mId;
 
     public POEvent(String title, String label, Date from, Date to) {
         mTitle = title;
         mLabel = label;
         mFrom = from;
         mTo = to;
+        mId = -1L;
     }
 
     public POEvent(ContentValues values) {
+        mId = values.getAsLong(OutlookDbHelper.EVENT_ID);
         mTitle = values.getAsString(OutlookDbHelper.EVENT_TITLE);
         mLabel = values.getAsString(OutlookDbHelper.EVENT_LABEL);
         mFrom = new Date(values.getAsLong(OutlookDbHelper.EVENT_START_TIME));
@@ -89,5 +92,9 @@ public class POEvent {
         cv.put(OutlookDbHelper.EVENT_START_TIME, mFrom.getTime());
         cv.put(OutlookDbHelper.EVENT_END_TIME, mTo.getTime());
         return cv;
+    }
+
+    public Long getId() {
+        return mId;
     }
 }
