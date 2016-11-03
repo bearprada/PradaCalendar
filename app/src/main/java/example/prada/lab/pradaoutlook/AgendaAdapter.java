@@ -115,7 +115,7 @@ public class AgendaAdapter extends SectioningAdapter {
         mFrom.setTime(firstEvent.getFrom());
         mTo.setTime(latestEvent.getTo());
 
-        int days = Utility.getDaysBetween(mFrom, mTo);
+        long days = Utility.getDaysBetween(mFrom, mTo);
         // Initial list
         for (int i = 0; i < days; i++) {
             mNumOfItemOnSectionList.add(0);

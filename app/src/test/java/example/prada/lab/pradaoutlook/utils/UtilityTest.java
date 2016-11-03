@@ -20,8 +20,7 @@ public class UtilityTest {
         Calendar c2 = Calendar.getInstance();
         c2.set(Calendar.YEAR, 2017);
         c2.set(Calendar.DAY_OF_YEAR, 1);
-        int days = Utility.getDaysBetween(c1, c2);
-        Assert.assertEquals(366, days);
+        Assert.assertEquals(366, Utility.getDaysBetween(c1, c2));
     }
 
     // FIXME
@@ -36,8 +35,6 @@ public class UtilityTest {
         c2.set(Calendar.MONTH, Calendar.JULY);
         c2.set(Calendar.DAY_OF_MONTH, 1);
         Assert.assertEquals(730479, Utility.getDaysBetween(c1, c2));
-        // 365243 vs 365237 > 6   (365250...+7...+13)
-        // 730485 vs 730479 > 6   (730499...+14...+20)
     }
 
     @Test
@@ -58,13 +55,12 @@ public class UtilityTest {
         Calendar c1 = Calendar.getInstance();
         c1.set(Calendar.YEAR, 2000);
         c1.set(Calendar.MONTH, Calendar.JULY);
-        c1.set(Calendar.DAY_OF_MONTH, 15); // 366 - (31+29+31+30+31+30+15) = 169
+        c1.set(Calendar.DAY_OF_MONTH, 15);
         Calendar c2 = Calendar.getInstance();
         c2.set(Calendar.YEAR, 2001);
         c2.set(Calendar.MONTH, Calendar.JULY);
-        c2.set(Calendar.DAY_OF_MONTH, 15); // (31+28+31+30+31+30+15) = 196
-        int days = Utility.getDaysBetween(c1, c2);
-        Assert.assertEquals(365, days);
+        c2.set(Calendar.DAY_OF_MONTH, 15);
+        Assert.assertEquals(365, Utility.getDaysBetween(c1, c2));
     }
 
     @Test
@@ -75,8 +71,7 @@ public class UtilityTest {
         Calendar c2 = Calendar.getInstance();
         c2.set(Calendar.YEAR, 2017);
         c2.set(Calendar.DAY_OF_YEAR, 1);
-        int days = Utility.getDaysBetween(c2, c1);
-        Assert.assertEquals(0, days);
+        Assert.assertEquals(0, Utility.getDaysBetween(c2, c1));
     }
 
     @Test

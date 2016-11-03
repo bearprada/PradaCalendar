@@ -8,24 +8,21 @@ import java.util.Calendar;
 
 public class Utility {
 
-    public static int getDaysBetween(Calendar cal1, Calendar cal2) {
+    public static final long MILL_SECONDS_A_DAY = 24 * 60 * 60 * 1000;
+
+    public static long getDaysBetween(Calendar cal1, Calendar cal2) {
         if (cal1 == null || cal2 == null) {
             return 0;
         }
-        if (cal1.after(cal2)) {
+        // normalize the days
+        cal1.set(Calendar.HOUR_OF_DAY, 0);
+        cal2.set(Calendar.HOUR_OF_DAY, 0);
+        long t1 = cal1.getTimeInMillis();
+        long t2 = cal2.getTimeInMillis();
+        if (t1 >= t2) {
             return 0;
         }
-        int year1 = cal1.get(Calendar.YEAR);
-        int year2 = cal2.get(Calendar.YEAR);
-        if (year1 == year2) {
-            return cal2.get(Calendar.DAY_OF_YEAR) - cal1.get(Calendar.DAY_OF_YEAR);
-        }
-        int days = (getDaysOfYear(year1) - cal1.get(Calendar.DAY_OF_YEAR));
-        days += cal2.get(Calendar.DAY_OF_YEAR);
-        for (int i = year1 + 1; i < year2; i++) {
-            days += getDaysOfYear(i);
-        }
-        return days;
+        return ((t2 - t1) / MILL_SECONDS_A_DAY);
     }
 
     private static int getDaysOfYear(int year) {
