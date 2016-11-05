@@ -25,14 +25,6 @@ public class Utility {
         return ((t2 - t1) / MILL_SECONDS_A_DAY);
     }
 
-    private static int getDaysOfYear(int year) {
-        return isLeapYear(year) ? 366 : 365;
-    }
-
-    private static boolean isLeapYear(int year) {
-        return year > 0 && (year % 4 == 0);
-    }
-
     public static String convertDayStr(int day) {
         switch(day) {
             case Calendar.SUNDAY:
