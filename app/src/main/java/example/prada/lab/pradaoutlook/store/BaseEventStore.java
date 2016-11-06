@@ -11,7 +11,7 @@ import example.prada.lab.pradaoutlook.model.IEventDataUpdatedListener;
 
 public abstract class BaseEventStore implements IEventStore {
 
-    protected List<IEventDataUpdatedListener> mListeners = new ArrayList<>();
+    List<IEventDataUpdatedListener> mListeners = new ArrayList<>();
 
     @Override
     public final void addListener(IEventDataUpdatedListener listener) {

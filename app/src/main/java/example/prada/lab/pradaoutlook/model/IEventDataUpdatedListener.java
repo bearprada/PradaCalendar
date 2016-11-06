@@ -9,7 +9,4 @@ import android.database.Cursor;
 
 public interface IEventDataUpdatedListener {
     void onEventsInsert(Cursor events);
-//    void onEventInsert(POEvent event);
-//    void onEventUpdate(POEvent event);
-//    void onEventDelete(POEvent event);
 }

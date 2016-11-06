@@ -8,8 +8,6 @@ import android.content.Context;
 
 public class EventStoreFactory {
     public static IEventStore getInstance(Context ctx) {
-        // TODO implement the content provider version later
-//        return MockEventStore.getInstance();
         return ContentProviderEventStore.getInstance(ctx);
     }
 }

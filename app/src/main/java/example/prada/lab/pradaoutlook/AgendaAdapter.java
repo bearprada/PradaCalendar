@@ -27,6 +27,8 @@ import example.prada.lab.pradaoutlook.view.NoEventViewHolder;
  * Created by prada on 10/27/16.
  */
 public class AgendaAdapter extends SectioningAdapter {
+    private static final int SECONDS_IN_A_DAY = 3600 * 24;
+
     private static final int ITEM_TYPE_EVENT = 1;
     private static final int ITEM_TYPE_NO_EVENT = 2;
 
@@ -163,7 +165,7 @@ public class AgendaAdapter extends SectioningAdapter {
     }
 
 
-    public void updateEvents() {
+    void updateEvents() {
         if (mCursor != null) {
             mCursor.close();
         }
@@ -172,19 +174,12 @@ public class AgendaAdapter extends SectioningAdapter {
         notifyDataSetChanged(); // FIXME
     }
 
-//    public void updateEvent(POEvent event) {
-//        // TODO update the range of the time frame
-//        notifySectionDataSetChanged(findSectionIndex(event.getFrom()));
-//    }
-
-    public static final int SECONDS_IN_A_DAY = 3600 * 24;
-
     private int findSectionIndex(@NonNull Date date) {
         long seconds = (date.getTime() - mFrom.getTimeInMillis()) / 1000;
         return (int) Math.floor(seconds / SECONDS_IN_A_DAY);
     }
 
-    public int findSectionPosition(@NonNull Date date) {
+    int findSectionPosition(@NonNull Date date) {
         return getAdapterPositionForSectionHeader(findSectionIndex(date));
     }
 }
