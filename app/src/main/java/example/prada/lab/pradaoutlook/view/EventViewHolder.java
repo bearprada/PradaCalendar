@@ -34,8 +34,8 @@ public class EventViewHolder extends SectioningAdapter.ItemViewHolder {
 
     public void bind(POEvent event) {
         mTxtTitle.setText(event.getTitle());
-        mTxtTime.setText(sDateFormat.format(event.getTo()));
-        long ms = event.getFrom().getTime() - event.getTo().getTime();
+        mTxtTime.setText(sDateFormat.format(event.getFrom()));
+        long ms = event.getTo().getTime() - event.getFrom().getTime();
         String durationStr = Utility.getDurationString(ms);
         if (!TextUtils.isEmpty(durationStr)) {
             mTxtDuration.setText(durationStr);

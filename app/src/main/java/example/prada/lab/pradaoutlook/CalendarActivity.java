@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
+import android.view.MenuItem;
 
 import com.github.sundeepk.compactcalendarview.CompactCalendarView;
 
@@ -59,41 +60,6 @@ public class CalendarActivity extends AppCompatActivity implements CompactCalend
 
         mAdapter = new AgendaAdapter(this);
         mAgendaView.setAdapter(mAdapter);
-
-        int numOfEvents = store.countEvents();
-        // inserting the test data when the store is empty
-        if (numOfEvents > 0) {
-            return;
-        }
-        Task.callInBackground(new Callable<List<POEvent>>() {
-            @Override
-            public List<POEvent> call() throws Exception {
-                // generate the 200 events between last two months to now
-                final int NUM_EVENTS = 200;
-                Calendar c1 = Calendar.getInstance();
-                c1.set(Calendar.MONTH, c1.get(Calendar.MONTH) - 2);
-                Calendar c2 = Calendar.getInstance();
-                final long t1 = c1.getTimeInMillis();
-                long t2 = c2.getTimeInMillis();
-                final long gap = (t2 - t1) / NUM_EVENTS;
-
-                java.util.Random random = new java.util.Random();
-                List<POEvent> data = new ArrayList<>();
-                for (int i = 0; i < NUM_EVENTS ; i++) {
-                    long eventT1 = t1 + (i * gap);
-                    long eventT2 = eventT1 + (random.nextInt(3600) * 1000);
-                    data.add(new POEvent("Event-" + random.nextInt(10000), "TODO", new Date(eventT1), new Date(eventT2)));
-                }
-                store.addEvents(data);
-                return data;
-            }
-        }).onSuccess(new Continuation<List<POEvent>, Void>() {
-            @Override
-            public Void then(Task<List<POEvent>> task) throws Exception {
-                Snackbar.make(mCoordinator, "import the events successful", Snackbar.LENGTH_SHORT).show();
-                return null;
-            }
-        }, Task.UI_THREAD_EXECUTOR);
     }
 
     @Override
@@ -116,10 +82,65 @@ public class CalendarActivity extends AppCompatActivity implements CompactCalend
     }
 
     @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        final IEventStore store = EventStoreFactory.getInstance(CalendarActivity.this);
+        switch (item.getItemId()) {
+            case R.id.menuitem_add_items:
+                Task.callInBackground(new Callable<List<POEvent>>() {
+                    @Override
+                    public List<POEvent> call() throws Exception {
+                        // generate the 200 events between last two months to now
+                        final int NUM_EVENTS = 200;
+                        Calendar c1 = Calendar.getInstance();
+                        c1.set(Calendar.DAY_OF_YEAR, c1.get(Calendar.DAY_OF_YEAR) - 60);
+                        Calendar c2 = Calendar.getInstance();
+                        final long t1 = c1.getTimeInMillis();
+                        long t2 = c2.getTimeInMillis();
+                        final long gap = (t2 - t1) / NUM_EVENTS;
+
+                        java.util.Random random = new java.util.Random();
+                        List<POEvent> data = new ArrayList<>();
+                        for (int i = 0; i < NUM_EVENTS ; i++) {
+                            long eventT1 = t1 + (i * gap);
+                            long eventT2 = eventT1 + (random.nextInt(3600) * 1000);
+                            data.add(new POEvent("Event-" + i, "TODO", new Date(eventT1), new Date(eventT2)));
+                        }
+                        store.addEvents(data);
+                        return data;
+                    }
+                }).onSuccess(new Continuation<List<POEvent>, Void>() {
+                    @Override
+                    public Void then(Task<List<POEvent>> task) throws Exception {
+                        Snackbar.make(mCoordinator, "import the events successful", Snackbar.LENGTH_SHORT).show();
+                        return null;
+                    }
+                }, Task.UI_THREAD_EXECUTOR);
+                return true;
+            case R.id.menuitem_clean_items:
+                Task.callInBackground(new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        store.removeAllRecords();
+                        return null;
+                    }
+                }).continueWith(new Continuation<Void, Void>() {
+                    @Override
+                    public Void then(Task<Void> task) throws Exception {
+                        onEventsInsert(store.getEvents());
+                        return null;
+                    }
+                });
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
     public void onDayClick(Date dateClicked) {
         try {
             // FIXME the scroll position isn't correct it might because the coordinate layout.
-            mAgendaView.smoothScrollToPosition(mAdapter.findSectionPosition(dateClicked));
+            mAgendaView.scrollToPosition(mAdapter.findSectionPosition(dateClicked));
         } catch (IndexOutOfBoundsException e) {
             Snackbar.make(mCoordinator, R.string.select_wrong_date, Snackbar.LENGTH_SHORT).show();
         }

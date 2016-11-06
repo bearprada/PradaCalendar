@@ -2,4 +2,14 @@
       xmlns:app="http://schemas.android.com/apk/res-auto"
       xmlns:tools="http://schemas.android.com/tools"
       tools:context="example.prada.lab.pradaoutlook.CalendarActivity">
+    <item
+        android:id="@+id/menuitem_add_items"
+        android:title="Add Mock Data"
+        app:showAsAction="never"
+        android:orderInCategory="100" />
+    <item
+        android:id="@+id/menuitem_clean_items"
+        android:title="Clear Data"
+        app:showAsAction="never"
+        android:orderInCategory="200" />
 </menu>

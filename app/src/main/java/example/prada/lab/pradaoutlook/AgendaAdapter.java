@@ -27,7 +27,7 @@ import example.prada.lab.pradaoutlook.view.NoEventViewHolder;
  * Created by prada on 10/27/16.
  */
 public class AgendaAdapter extends SectioningAdapter {
-    private static final int SECONDS_IN_A_DAY = 3600 * 24;
+    private static final int MILL_SECONDS_IN_A_DAY = 24 * 60 * 60 * 1000;
 
     private static final int ITEM_TYPE_EVENT = 1;
     private static final int ITEM_TYPE_NO_EVENT = 2;
@@ -108,6 +108,9 @@ public class AgendaAdapter extends SectioningAdapter {
         mEventCache.evictAll();
         mNumOfItemOnSectionList.clear();
 
+        if (mCursor.getCount() <= 0) {
+            return;
+        }
         if (!mCursor.moveToFirst()) {
             return;
         }
@@ -116,18 +119,26 @@ public class AgendaAdapter extends SectioningAdapter {
         POEvent latestEvent = POEvent.createFromCursor(mCursor);
         mFrom.setTime(firstEvent.getFrom());
         mTo.setTime(latestEvent.getTo());
+        normalizeDate(mFrom);
+        normalizeDate(mTo);
 
-        long days = Utility.getDaysBetween(mFrom, mTo);
+        long days = Utility.getDaysBetween(mFrom, mTo) + 1; // FIXME
         // Initial list
-        for (int i = 0; i < days; i++) {
+        for (int i = 0; i <= days; i++) {
             mNumOfItemOnSectionList.add(0);
         }
         mCursor.moveToFirst();
         while (mCursor.moveToNext()) {
             POEvent e = POEvent.createFromCursor(mCursor);
             int sectionIdx = findSectionIndex(e.getFrom());
-            mNumOfItemOnSectionList.set(sectionIdx, mNumOfItemOnSectionList.get(sectionIdx) + 1);
+            int count = mNumOfItemOnSectionList.get(sectionIdx);
+            mNumOfItemOnSectionList.set(sectionIdx, count + 1);
         }
+    }
+
+    private void normalizeDate(Calendar cal) {
+        long mill = (long) Math.floor(cal.getTimeInMillis() / MILL_SECONDS_IN_A_DAY);
+        cal.setTimeInMillis(mill * MILL_SECONDS_IN_A_DAY);
     }
 
     private boolean hasEvent(int sectionIndex) {
@@ -164,19 +175,18 @@ public class AgendaAdapter extends SectioningAdapter {
         return numEvents == 0 ? 1 : numEvents;
     }
 
-
     void updateEvents() {
         if (mCursor != null) {
             mCursor.close();
         }
         mCursor = mStore.getEvents();
         rebuildSectionsMetadata();
-        notifyDataSetChanged(); // FIXME
+        notifyAllSectionsDataSetChanged();
     }
 
     private int findSectionIndex(@NonNull Date date) {
-        long seconds = (date.getTime() - mFrom.getTimeInMillis()) / 1000;
-        return (int) Math.floor(seconds / SECONDS_IN_A_DAY);
+        long millSeconds = date.getTime() - mFrom.getTimeInMillis();
+        return (int) Math.floor(millSeconds / MILL_SECONDS_IN_A_DAY);
     }
 
     int findSectionPosition(@NonNull Date date) {
