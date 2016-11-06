@@ -29,8 +29,8 @@ import example.prada.lab.pradaoutlook.store.EventStoreFactory;
 import example.prada.lab.pradaoutlook.store.IEventStore;
 import example.prada.lab.pradaoutlook.utils.Utility;
 
-public class CalendarActivity extends AppCompatActivity implements CompactCalendarView.CompactCalendarViewListener,
-                                                                   IEventDataUpdatedListener {
+public class CalendarActivity extends AppCompatActivity
+    implements CompactCalendarView.CompactCalendarViewListener, IEventDataUpdatedListener {
 
     private AgendaAdapter mAdapter;
     private CompactCalendarView mCalendarView;
@@ -56,7 +56,7 @@ public class CalendarActivity extends AppCompatActivity implements CompactCalend
         mCalendarView.setListener(this);
         updateCalenderView(store.getEvents());
 
-        setTitle(getTitleString(Calendar.getInstance()));
+        setTitle(getTitleString(mCalendarView.getFirstDayOfCurrentMonth()));
 
         mAdapter = new AgendaAdapter(this);
         mAgendaView.setAdapter(mAdapter);
@@ -68,9 +68,9 @@ public class CalendarActivity extends AppCompatActivity implements CompactCalend
         EventStoreFactory.getInstance(this).removeListener(this);
     }
 
-    private String getTitleString(Calendar calendar) {
-        int year = calendar.get(Calendar.YEAR);
-        int month = calendar.get(Calendar.MONTH);
+    private String getTitleString(Date date) {
+        int year = date.getYear();
+        int month = date.getMonth();
         return String.format("%s %s", year, Utility.convertMonthStr(month).substring(0, 3));
     }
 
@@ -139,7 +139,6 @@ public class CalendarActivity extends AppCompatActivity implements CompactCalend
     @Override
     public void onDayClick(Date dateClicked) {
         try {
-            // FIXME the scroll position isn't correct it might because the coordinate layout.
             mAgendaView.scrollToPosition(mAdapter.findSectionPosition(dateClicked));
         } catch (IndexOutOfBoundsException e) {
             Snackbar.make(mCoordinator, R.string.select_wrong_date, Snackbar.LENGTH_SHORT).show();
@@ -151,16 +150,14 @@ public class CalendarActivity extends AppCompatActivity implements CompactCalend
         // put the limit month on this library if it's over the end of duration
         // ref : https://github.com/SundeepK/CompactCalendarView/issues/51
 //        mCalendarView.shouldScrollMonth();
-
-        // TODO change the agenda view
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(firstDayOfNewMonth);
-        setTitle(getTitleString(calendar));
+        try {
+            mAgendaView.scrollToPosition(mAdapter.findSectionPosition(firstDayOfNewMonth));
+        } catch (IndexOutOfBoundsException ignored) {}
+        setTitle(getTitleString(firstDayOfNewMonth));
     }
 
     @Override
     public void onEventsInsert(Cursor cursor) {
-        // FIXME only update the sections that's in the range of events
         mAdapter.updateEvents();
         updateCalenderView(cursor);
     }

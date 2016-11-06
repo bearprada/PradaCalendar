@@ -70,6 +70,9 @@ public class UtilityTest {
         c2.set(Calendar.YEAR, 2017);
         c2.set(Calendar.DAY_OF_YEAR, 1);
         assertEquals(0, Utility.getDaysBetween(c2, c1));
+        assertEquals(0, Utility.getDaysBetween(c1, null));
+        assertEquals(0, Utility.getDaysBetween(null, c2));
+        assertEquals(0, Utility.getDaysBetween(null, null));
     }
 
     @Test

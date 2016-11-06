@@ -29,8 +29,8 @@ import example.prada.lab.pradaoutlook.view.NoEventViewHolder;
 public class AgendaAdapter extends SectioningAdapter {
     private static final int MILL_SECONDS_IN_A_DAY = 24 * 60 * 60 * 1000;
 
-    private static final int ITEM_TYPE_EVENT = 1;
-    private static final int ITEM_TYPE_NO_EVENT = 2;
+    public static final int ITEM_TYPE_EVENT = 1;
+    public static final int ITEM_TYPE_NO_EVENT = 2;
 
     private final LayoutInflater mInflater;
     private final Calendar mFrom = Calendar.getInstance();
@@ -97,11 +97,43 @@ public class AgendaAdapter extends SectioningAdapter {
 
     @Override
     public int getSectionItemUserType(int sectionIndex, int itemIndex) {
-        if (hasEvent(sectionIndex)) {
+        if (mNumOfItemOnSectionList.get(sectionIndex) > 0) {
             return ITEM_TYPE_EVENT;
         } else {
             return ITEM_TYPE_NO_EVENT;
         }
+    }
+
+    @Override
+    public boolean doesSectionHaveHeader(int sectionIndex) {
+        return true;
+    }
+
+    @Override
+    public int getNumberOfItemsInSection(int sectionIndex) {
+        if (sectionIndex >= mNumOfItemOnSectionList.size()) {
+            return 0;
+        }
+        int numEvents = mNumOfItemOnSectionList.get(sectionIndex);
+        return numEvents == 0 ? 1 : numEvents;
+    }
+
+    public void updateEvents() {
+        if (mCursor != null) {
+            mCursor.close();
+        }
+        mCursor = mStore.getEvents();
+        rebuildSectionsMetadata();
+        notifyAllSectionsDataSetChanged();
+    }
+
+    public int findSectionPosition(@NonNull Date date) {
+        return getAdapterPositionForSectionHeader(findSectionIndex(date));
+    }
+
+    public int findSectionIndex(@NonNull Date date) {
+        long millSeconds = date.getTime() - mFrom.getTimeInMillis();
+        return (int) Math.floor(millSeconds / MILL_SECONDS_IN_A_DAY);
     }
 
     private void rebuildSectionsMetadata() {
@@ -109,11 +141,12 @@ public class AgendaAdapter extends SectioningAdapter {
         mNumOfItemOnSectionList.clear();
 
         if (mCursor.getCount() <= 0) {
+            Date date = new Date();
+            mFrom.setTime(date);
+            mTo.setTime(date);
             return;
         }
-        if (!mCursor.moveToFirst()) {
-            return;
-        }
+        mCursor.moveToFirst();
         POEvent firstEvent = POEvent.createFromCursor(mCursor);
         mCursor.moveToLast();
         POEvent latestEvent = POEvent.createFromCursor(mCursor);
@@ -122,18 +155,19 @@ public class AgendaAdapter extends SectioningAdapter {
         normalizeDate(mFrom);
         normalizeDate(mTo);
 
-        long days = Utility.getDaysBetween(mFrom, mTo) + 1; // FIXME
+        long days = Utility.getDaysBetween(mFrom, mTo);
         // Initial list
         for (int i = 0; i <= days; i++) {
             mNumOfItemOnSectionList.add(0);
         }
         mCursor.moveToFirst();
-        while (mCursor.moveToNext()) {
+        do {
             POEvent e = POEvent.createFromCursor(mCursor);
             int sectionIdx = findSectionIndex(e.getFrom());
+//            android.util.Log.d("TEST", e.getFrom() + " >> " + sectionIdx);
             int count = mNumOfItemOnSectionList.get(sectionIdx);
             mNumOfItemOnSectionList.set(sectionIdx, count + 1);
-        }
+        } while (mCursor.moveToNext());
     }
 
     private void normalizeDate(Calendar cal) {
@@ -141,12 +175,12 @@ public class AgendaAdapter extends SectioningAdapter {
         cal.setTimeInMillis(mill * MILL_SECONDS_IN_A_DAY);
     }
 
-    private boolean hasEvent(int sectionIndex) {
-        return mNumOfItemOnSectionList.get(sectionIndex) > 0;
-    }
-
-    private POEvent queryEvent(int sectionIndex, int itemIndex) {
+    // made this method be default method because we want to test it.
+    POEvent queryEvent(int sectionIndex, int itemIndex) {
         int cursorIndex = getCursorIndex(sectionIndex, itemIndex);
+        if (cursorIndex < 0) {
+            return null;
+        }
         if (mEventCache.get(cursorIndex) != null) {
             return mEventCache.get(cursorIndex);
         }
@@ -157,39 +191,16 @@ public class AgendaAdapter extends SectioningAdapter {
     }
 
     private int getCursorIndex(int sectionIndex, int itemIndex) {
-        int cursorIndex = itemIndex;
+        if (sectionIndex >= mNumOfItemOnSectionList.size()) {
+            return -1;
+        }
+        int cursorIndex = 0;
+        if (itemIndex < mNumOfItemOnSectionList.get(sectionIndex)) {
+            cursorIndex = itemIndex;
+        }
         for (int i = 0; i < sectionIndex ; i++) {
             cursorIndex += mNumOfItemOnSectionList.get(i);
         }
         return cursorIndex;
-    }
-
-    @Override
-    public boolean doesSectionHaveHeader(int sectionIndex) {
-        return true;
-    }
-
-    @Override
-    public int getNumberOfItemsInSection(int sectionIndex) {
-        int numEvents = mNumOfItemOnSectionList.get(sectionIndex);
-        return numEvents == 0 ? 1 : numEvents;
-    }
-
-    void updateEvents() {
-        if (mCursor != null) {
-            mCursor.close();
-        }
-        mCursor = mStore.getEvents();
-        rebuildSectionsMetadata();
-        notifyAllSectionsDataSetChanged();
-    }
-
-    private int findSectionIndex(@NonNull Date date) {
-        long millSeconds = date.getTime() - mFrom.getTimeInMillis();
-        return (int) Math.floor(millSeconds / MILL_SECONDS_IN_A_DAY);
-    }
-
-    int findSectionPosition(@NonNull Date date) {
-        return getAdapterPositionForSectionHeader(findSectionIndex(date));
     }
 }

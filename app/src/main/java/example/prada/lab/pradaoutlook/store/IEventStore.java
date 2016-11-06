@@ -16,15 +16,15 @@ import example.prada.lab.pradaoutlook.model.POEvent;
 
 public interface IEventStore {
 
-    Cursor getEvents();
+    @NonNull Cursor getEvents();
 
     int countEvents();
 
     boolean hasEvents(long t1, long t2);
 
-    Calendar getFirstEventTime() throws IllegalStateException;
+    @NonNull Calendar getFirstEventTime() throws IllegalStateException;
 
-    Calendar getLatestEventTime() throws IllegalStateException;
+    @NonNull Calendar getLatestEventTime() throws IllegalStateException;
 
     void addEvents(Collection<POEvent> events);
 
