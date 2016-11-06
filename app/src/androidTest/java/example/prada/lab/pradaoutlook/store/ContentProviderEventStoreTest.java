@@ -224,7 +224,7 @@ public class ContentProviderEventStoreTest {
             d1.setYear(2000);
             d1.setMonth(i);
             Date d2 = new Date();
-            d1.setYear(2000);
+            d2.setYear(2000);
             d2.setMonth(i + 1);
             POEvent event = new POEvent("Event" + i, "Label" + i, d1, d2);
             events.add(event);

@@ -5,6 +5,7 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.graphics.Color;
 import android.support.annotation.ColorInt;
+import android.text.TextUtils;
 
 import java.util.Date;
 import com.github.sundeepk.compactcalendarview.domain.Event;
@@ -21,20 +22,37 @@ public class POEvent {
     private final Date mTo;
     private Long mId;
 
-    public POEvent(String title, String label, Date from, Date to) {
+    public POEvent(String title, String label, Date from, Date to) throws IllegalArgumentException {
         mTitle = title;
         mLabel = label;
         mFrom = from;
         mTo = to;
         mId = -1L;
+        verify();
     }
 
-    public POEvent(ContentValues values) {
+    private POEvent(ContentValues values) throws IllegalArgumentException {
         mId = values.getAsLong(OutlookDbHelper.EVENT_ID);
         mTitle = values.getAsString(OutlookDbHelper.EVENT_TITLE);
         mLabel = values.getAsString(OutlookDbHelper.EVENT_LABEL);
         mFrom = new Date(values.getAsLong(OutlookDbHelper.EVENT_START_TIME));
         mTo = new Date(values.getAsLong(OutlookDbHelper.EVENT_END_TIME));
+        verify();
+    }
+
+    private void verify() throws IllegalArgumentException {
+        if (TextUtils.isEmpty(mTitle)) {
+            throw new IllegalArgumentException("title should not be null or empty");
+        }
+        if (TextUtils.isEmpty(mLabel)) {
+            throw new IllegalArgumentException("label should not be null or empty");
+        }
+        if (mFrom == null || mTo == null) {
+            throw new IllegalArgumentException("the date range should not be null, but the from = " + mFrom + ", to = " + mTo);
+        }
+        if (mFrom.after(mTo)) {
+            throw new IllegalArgumentException("the date range is wrong, but the from = " + mFrom + ", to = " + mTo);
+        }
     }
 
     public String getTitle() {
@@ -51,23 +69,6 @@ public class POEvent {
 
     public Date getTo() {
         return mTo;
-    }
-
-    // TODO Test caes, expected format : 2h30m
-    public String getDurationString() {
-        long seconds = (mTo.getTime() - mFrom.getTime()) / 1000;
-        if (seconds < 60) { // it's less then 1 min.
-            return null;
-        }
-        int hour = (int) (seconds / 3600);
-        int min = (int) ((seconds % 3600) / 60);
-        if (hour <= 0 && min > 0) {
-            return min + "m";
-        }
-        if (min <= 0 && hour > 0) {
-            return hour + "h";
-        }
-        return hour + "h" + min + "m";
     }
 
     public Event toEvent() {
@@ -124,6 +125,9 @@ public class POEvent {
     }
 
     public void setId(long id) {
+        if (id <= 0) {
+            throw new IllegalArgumentException("the event id should be over 0");
+        }
         mId = id;
     }
 }
