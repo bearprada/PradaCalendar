@@ -82,21 +82,32 @@ public class EventContentProvider extends ContentProvider {
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+        int totalDeletedRow = 0;
         switch (sUriMatcher.match(uri)) {
+            case EVENT:
+                try {
+                    db.beginTransaction();
+                    totalDeletedRow = db.delete(OutlookDbHelper.NAME, selection, selectionArgs);
+                    db.setTransactionSuccessful();
+                    break;
+                } finally {
+                    db.endTransaction();
+                    mResolver.notifyChange(uri, null);
+                }
             case EVENT_WITH_ID:
-                SQLiteDatabase db = mDbHelper.getWritableDatabase();
                 long id = ContentUris.parseId(uri);
                 try {
                     db.beginTransaction();
-                    int totalDeletedRow = db.delete(OutlookDbHelper.NAME, OutlookDbHelper.EVENT_ID + "=" + id, null);
+                    totalDeletedRow = db.delete(OutlookDbHelper.NAME, OutlookDbHelper.EVENT_ID + "=" + id, null);
                     db.setTransactionSuccessful();
-                    return totalDeletedRow;
+                    break;
                 } finally {
                     db.endTransaction();
                     mResolver.notifyChange(uri, null);
                 }
         }
-        return 0;
+        return totalDeletedRow;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package example.prada.lab.pradaoutlook.store;
 
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
@@ -61,6 +62,9 @@ public class ContentProviderEventStore extends BaseEventStore {
 
     @Override
     public boolean hasEvents(long t1, long t2) {
+        if (t1 < 0 || t2 < 0) {
+            throw new IllegalArgumentException("the timestamp should be the positive value, but t1 = " + t1 + ", t2 = " + t2);
+        }
         return ProviderAction.query(EventContentProvider.EVENT_URI)
                              .projection(OutlookDbHelper.EVENT_ID)
                              .where(OutlookDbHelper.EVENT_START_TIME + " > " + t1 + " OR "+
@@ -72,10 +76,10 @@ public class ContentProviderEventStore extends BaseEventStore {
     @Override
     public Calendar getFirstEventTime() throws NullPointerException {
         Cursor cursor = ProviderAction.query(EventContentProvider.EVENT_URI)
-                                            .orderBy(OutlookDbHelper.EVENT_START_TIME + " DESC")
+                                            .orderBy(OutlookDbHelper.EVENT_START_TIME + " ASC")
                                             .perform(mResolver);
         if (cursor.getCount() <= 0) {
-            throw new NullPointerException("it can't find any record");
+            throw new IllegalStateException("it can't find any record");
         }
         cursor.moveToFirst();
         POEvent e = POEvent.createFromCursor(cursor);
@@ -87,10 +91,10 @@ public class ContentProviderEventStore extends BaseEventStore {
     @Override
     public Calendar getLatestEventTime() {
         Cursor cursor = ProviderAction.query(EventContentProvider.EVENT_URI)
-                                      .orderBy(OutlookDbHelper.EVENT_END_TIME + " ASC")
+                                      .orderBy(OutlookDbHelper.EVENT_END_TIME + " DESC")
                                       .perform(mResolver);
         if (cursor.getCount() <= 0) {
-            throw new NullPointerException("it can't find any record");
+            throw new IllegalStateException("it can't find any record");
         }
         cursor.moveToFirst();
         POEvent e = POEvent.createFromCursor(cursor);
@@ -107,8 +111,13 @@ public class ContentProviderEventStore extends BaseEventStore {
 
     @Override
     public void addEvents(final Collection<POEvent> events) {
+        if (events == null) {
+            throw new NullPointerException("the events list should be null");
+        }
         for (POEvent event : events) {
-            insertEvent(event);
+            Uri uri = insertEvent(event);
+            long id = ContentUris.parseId(uri);
+            event.setId(id);
         }
         Task.call(new Callable<Void>() {
             @Override
@@ -119,5 +128,13 @@ public class ContentProviderEventStore extends BaseEventStore {
                 return null;
             }
         }, Task.UI_THREAD_EXECUTOR);
+    }
+
+    @Override
+    public void removeAllRecords() {
+        int count = ProviderAction.delete(EventContentProvider.EVENT_URI)
+                                      .where("1")
+                                      .perform(mResolver);
+        System.out.println("it has deleted " + count + " rows");
     }
 }

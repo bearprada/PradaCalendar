@@ -22,13 +22,16 @@ public interface IEventStore {
 
     boolean hasEvents(long t1, long t2);
 
-    Calendar getFirstEventTime();
+    Calendar getFirstEventTime() throws IllegalStateException;
 
-    Calendar getLatestEventTime();
+    Calendar getLatestEventTime() throws IllegalStateException;
 
     void addEvents(Collection<POEvent> events);
 
     void addListener(IEventDataUpdatedListener listener);
 
     void removeListener(IEventDataUpdatedListener listener);
+
+    // TODO this api only for the test case
+    void removeAllRecords();
 }

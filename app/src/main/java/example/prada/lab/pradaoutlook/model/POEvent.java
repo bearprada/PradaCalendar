@@ -19,7 +19,7 @@ public class POEvent {
     private final String mLabel;
     private final Date mFrom;
     private final Date mTo;
-    private final Long mId;
+    private Long mId;
 
     public POEvent(String title, String label, Date from, Date to) {
         mTitle = title;
@@ -96,5 +96,34 @@ public class POEvent {
 
     public Long getId() {
         return mId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        POEvent poEvent = (POEvent) o;
+
+        if (mTitle != null ? !mTitle.equals(poEvent.mTitle) : poEvent.mTitle != null) return false;
+        if (mLabel != null ? !mLabel.equals(poEvent.mLabel) : poEvent.mLabel != null) return false;
+        if (mFrom != null ? !mFrom.equals(poEvent.mFrom) : poEvent.mFrom != null) return false;
+        if (mTo != null ? !mTo.equals(poEvent.mTo) : poEvent.mTo != null) return false;
+        return mId != null ? mId.equals(poEvent.mId) : poEvent.mId == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mTitle != null ? mTitle.hashCode() : 0;
+        result = 31 * result + (mLabel != null ? mLabel.hashCode() : 0);
+        result = 31 * result + (mFrom != null ? mFrom.hashCode() : 0);
+        result = 31 * result + (mTo != null ? mTo.hashCode() : 0);
+        result = 31 * result + (mId != null ? mId.hashCode() : 0);
+        return result;
+    }
+
+    public void setId(long id) {
+        mId = id;
     }
 }

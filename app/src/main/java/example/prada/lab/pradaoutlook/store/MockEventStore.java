@@ -81,6 +81,9 @@ public class MockEventStore extends BaseEventStore {
 
     @Override
     public Calendar getFirstEventTime() {
+        if (mTestData.isEmpty()) {
+            throw new IllegalStateException("the store doesn't contain any events");
+        }
         Calendar c = Calendar.getInstance();
         c.setTime(mTestData.first().getFrom());
         return c;
@@ -88,6 +91,9 @@ public class MockEventStore extends BaseEventStore {
 
     @Override
     public Calendar getLatestEventTime() {
+        if (mTestData.isEmpty()) {
+            throw new IllegalStateException("the store doesn't contain any events");
+        }
         Calendar c = Calendar.getInstance();
         c.setTime(mTestData.last().getTo());
         return c;
@@ -100,5 +106,10 @@ public class MockEventStore extends BaseEventStore {
         for (IEventDataUpdatedListener listener : mListeners) {
             listener.onEventsInsert(cursor);
         }
+    }
+
+    @Override
+    public void removeAllRecords() {
+        mTestData.clear();
     }
 }
