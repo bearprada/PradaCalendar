@@ -1,5 +1,7 @@
 package example.prada.lab.pradaoutlook.utils;
 
+import android.support.annotation.NonNull;
+
 import java.util.Calendar;
 
 /**
@@ -8,7 +10,7 @@ import java.util.Calendar;
 
 public class Utility {
 
-    public static final long MILL_SECONDS_A_DAY = 24 * 60 * 60 * 1000;
+    private static final long MILL_SECONDS_A_DAY = 24 * 60 * 60 * 1000;
 
     public static long getDaysBetween(Calendar cal1, Calendar cal2) {
         if (cal1 == null || cal2 == null) {
@@ -23,6 +25,27 @@ public class Utility {
             return 0;
         }
         return ((t2 - t1) / MILL_SECONDS_A_DAY);
+    }
+
+    public static @NonNull String getDurationString(long millSeconds) {
+        long seconds = millSeconds / 1000;
+        if (seconds < 60) { // it's less then 1 min.
+            return "";
+        }
+        int day = (int) Math.floor(seconds / (3600 * 24));
+        int hrs = (int) Math.floor(seconds / 3600) % 24;
+        int min = (int) Math.floor(seconds % 3600) / 60;
+        StringBuilder sb = new StringBuilder();
+        if (day > 0) {
+            sb.append(day).append("d");
+        }
+        if (hrs > 0) {
+            sb.append(hrs).append("h");
+        }
+        if (min > 0) {
+            sb.append(min).append("m");
+        }
+        return sb.toString();
     }
 
     public static String convertDayStr(int day) {

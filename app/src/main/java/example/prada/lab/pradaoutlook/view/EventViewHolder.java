@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 
 import example.prada.lab.pradaoutlook.R;
 import example.prada.lab.pradaoutlook.model.POEvent;
+import example.prada.lab.pradaoutlook.utils.Utility;
 
 /**
  * Created by prada on 10/29/16.
@@ -34,7 +35,8 @@ public class EventViewHolder extends SectioningAdapter.ItemViewHolder {
     public void bind(POEvent event) {
         mTxtTitle.setText(event.getTitle());
         mTxtTime.setText(sDateFormat.format(event.getTo()));
-        String durationStr = event.getDurationString();
+        long ms = event.getFrom().getTime() - event.getTo().getTime();
+        String durationStr = Utility.getDurationString(ms);
         if (!TextUtils.isEmpty(durationStr)) {
             mTxtDuration.setText(durationStr);
         }
