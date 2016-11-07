@@ -33,6 +33,10 @@ public class EventContentProvider extends ContentProvider {
         sUriMatcher.addURI(AUTHORITY, "events/#", EVENT_WITH_ID);
     }
 
+    public static Uri createEventIdUri(long id) {
+        return Uri.parse("content://" + AUTHORITY + "/events/" + id);
+    }
+
 
     @Override
     public boolean onCreate() {
@@ -112,6 +116,13 @@ public class EventContentProvider extends ContentProvider {
 
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+        if (values == null || values.size() == 0) {
+            return 0;
+        }
+        // we don't expect the user can modify the event id
+        if (values.containsKey(OutlookDbHelper.EVENT_ID)) {
+            return 0;
+        }
         switch (sUriMatcher.match(uri)) {
             case EVENT_WITH_ID:
                 long id = ContentUris.parseId(uri);

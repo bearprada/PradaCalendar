@@ -62,8 +62,6 @@ public class AgendaAdapterTest {
      */
     @Test
     public void testGetNumOfSectionsAndItemsWithEmptySection() {
-        int NUM = 30;
-
         Calendar c1 = Calendar.getInstance();
         c1.set(Calendar.YEAR, 2020);
         c1.set(Calendar.MONTH, 1);
