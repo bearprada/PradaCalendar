@@ -69,7 +69,7 @@ public class CalendarActivity extends AppCompatActivity
     }
 
     private String getTitleString(Date date) {
-        int year = date.getYear();
+        int year = date.getYear() + 1900;
         int month = date.getMonth();
         return String.format("%s %s", year, Utility.convertMonthStr(month).substring(0, 3));
     }
@@ -147,9 +147,6 @@ public class CalendarActivity extends AppCompatActivity
 
     @Override
     public void onMonthScroll(Date firstDayOfNewMonth) {
-        // put the limit month on this library if it's over the end of duration
-        // ref : https://github.com/SundeepK/CompactCalendarView/issues/51
-//        mCalendarView.shouldScrollMonth();
         try {
             mAgendaView.scrollToPosition(mAdapter.findSectionPosition(firstDayOfNewMonth));
         } catch (IndexOutOfBoundsException ignored) {}
