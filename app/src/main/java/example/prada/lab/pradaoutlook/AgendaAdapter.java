@@ -9,11 +9,13 @@ import android.view.ViewGroup;
 
 import org.zakariya.stickyheaders.SectioningAdapter;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import example.prada.lab.pradaoutlook.store.EventStoreFactory;
 import example.prada.lab.pradaoutlook.store.IEventStore;
@@ -22,6 +24,7 @@ import example.prada.lab.pradaoutlook.utils.Utility;
 import example.prada.lab.pradaoutlook.view.DayViewHolder;
 import example.prada.lab.pradaoutlook.view.EventViewHolder;
 import example.prada.lab.pradaoutlook.view.NoEventViewHolder;
+import example.prada.lab.pradaoutlook.weather.WeatherManager;
 
 /**
  * Created by prada on 10/27/16.
@@ -36,16 +39,19 @@ public class AgendaAdapter extends SectioningAdapter {
     private final Calendar mFrom = Calendar.getInstance();
     private final Calendar mTo = Calendar.getInstance();
     private final IEventStore mStore;
+    private final WeatherManager mWeatherMgr;
     private Cursor mCursor = null;
 
     private LruCache<Integer, POEvent> mEventCache = new LruCache<>(256);
 
-    private final List<Integer> mNumOfItemOnSectionList = Collections.synchronizedList(new ArrayList<Integer>());
+    private final List<Map.Entry<Calendar, Integer>> mNumOfItemOnSectionList =
+        Collections.synchronizedList(new ArrayList<Map.Entry<Calendar, Integer>>());
 
     public AgendaAdapter(@NonNull Context ctx) {
         mInflater = LayoutInflater.from(ctx);
         mStore = EventStoreFactory.getInstance(ctx);
         mCursor = mStore.getEvents();
+        mWeatherMgr = WeatherManager.getInstance(ctx);
         rebuildSectionsMetadata();
     }
 
@@ -85,9 +91,8 @@ public class AgendaAdapter extends SectioningAdapter {
     public void onBindHeaderViewHolder(HeaderViewHolder viewHolder, int sectionIndex,
                                        int headerUserType) {
         DayViewHolder vh = (DayViewHolder) viewHolder;
-        Calendar c = (Calendar) mFrom.clone();
-        c.add(Calendar.HOUR, 24 * sectionIndex);
-        vh.bind(c);
+        Calendar cal = mNumOfItemOnSectionList.get(sectionIndex).getKey();
+        vh.bind(cal, mWeatherMgr.fetchWeather(cal.getTimeInMillis()));
     }
 
     @Override
@@ -97,7 +102,7 @@ public class AgendaAdapter extends SectioningAdapter {
 
     @Override
     public int getSectionItemUserType(int sectionIndex, int itemIndex) {
-        if (mNumOfItemOnSectionList.get(sectionIndex) > 0) {
+        if (mNumOfItemOnSectionList.get(sectionIndex).getValue() > 0) {
             return ITEM_TYPE_EVENT;
         } else {
             return ITEM_TYPE_NO_EVENT;
@@ -114,7 +119,7 @@ public class AgendaAdapter extends SectioningAdapter {
         if (sectionIndex >= mNumOfItemOnSectionList.size()) {
             return 0;
         }
-        int numEvents = mNumOfItemOnSectionList.get(sectionIndex);
+        int numEvents = mNumOfItemOnSectionList.get(sectionIndex).getValue();
         return numEvents == 0 ? 1 : numEvents;
     }
 
@@ -159,14 +164,16 @@ public class AgendaAdapter extends SectioningAdapter {
         long days = Utility.getDaysBetween(mFrom, mTo);
         // Initial list
         for (int i = 0; i < days; i++) {
-            mNumOfItemOnSectionList.add(0);
+            Calendar c = (Calendar) mFrom.clone();
+            c.add(Calendar.HOUR, 24 * i);
+            mNumOfItemOnSectionList.add(new AbstractMap.SimpleEntry<>(c, 0));
         }
         mCursor.moveToFirst();
         do {
             POEvent e = POEvent.createFromCursor(mCursor);
             int sectionIdx = findSectionIndex(e.getFrom());
-            int count = mNumOfItemOnSectionList.get(sectionIdx);
-            mNumOfItemOnSectionList.set(sectionIdx, count + 1);
+            int count = mNumOfItemOnSectionList.get(sectionIdx).getValue();
+            mNumOfItemOnSectionList.get(sectionIdx).setValue(count + 1);
         } while (mCursor.moveToNext());
     }
 
@@ -195,12 +202,26 @@ public class AgendaAdapter extends SectioningAdapter {
             return -1;
         }
         int cursorIndex = 0;
-        if (itemIndex < mNumOfItemOnSectionList.get(sectionIndex)) {
+        if (itemIndex < mNumOfItemOnSectionList.get(sectionIndex).getValue()) {
             cursorIndex = itemIndex;
         }
         for (int i = 0; i < sectionIndex ; i++) {
-            cursorIndex += mNumOfItemOnSectionList.get(i);
+            cursorIndex += mNumOfItemOnSectionList.get(i).getValue();
         }
         return cursorIndex;
+    }
+
+    public void updateSections(long t1, long t2) {
+        if (t1 < 0 || t2 < 0 || t2 <= t1) {
+            return;
+        }
+        int idx1 = findSectionIndex(new Date(t1));
+        int idx2 = findSectionIndex(new Date(t2));
+        int size = mNumOfItemOnSectionList.size();
+        for (int i = idx1; i <= idx2 ; i++) {
+            if (i < size && i >= 0) {
+                notifyItemChanged(getAdapterPositionForSectionHeader(i));
+            }
+        }
     }
 }

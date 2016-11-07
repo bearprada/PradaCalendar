@@ -25,9 +25,12 @@ import bolts.Continuation;
 import bolts.Task;
 import example.prada.lab.pradaoutlook.model.IEventDataUpdatedListener;
 import example.prada.lab.pradaoutlook.model.POEvent;
+import example.prada.lab.pradaoutlook.model.WeatherItem;
+import example.prada.lab.pradaoutlook.model.WeatherResponse;
 import example.prada.lab.pradaoutlook.store.EventStoreFactory;
 import example.prada.lab.pradaoutlook.store.IEventStore;
 import example.prada.lab.pradaoutlook.utils.Utility;
+import example.prada.lab.pradaoutlook.weather.WeatherManager;
 
 public class CalendarActivity extends AppCompatActivity
     implements CompactCalendarView.CompactCalendarViewListener, IEventDataUpdatedListener {
@@ -60,6 +63,34 @@ public class CalendarActivity extends AppCompatActivity
 
         mAdapter = new AgendaAdapter(this);
         mAgendaView.setAdapter(mAdapter);
+
+        // FIXME emulate the location manager
+        Task.callInBackground(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                Thread.sleep(3000);
+                return null;
+            }
+        }).onSuccessTask(new Continuation<Void, Task<WeatherResponse>>() {
+            @Override
+            public Task<WeatherResponse> then(Task<Void> task) throws Exception {
+                return WeatherManager.getInstance(CalendarActivity.this)
+                                     .handleLocation(23.6978, 120.9605);
+            }
+        }).continueWith(new Continuation<WeatherResponse, Void>() {
+            @Override
+            public Void then(Task<WeatherResponse> task) throws Exception {
+                if (task.isFaulted() || task.isCancelled()) {
+                    task.getError().printStackTrace();
+                    return null;
+                }
+                List<WeatherItem> list = task.getResult().getWeathers();
+                WeatherItem weather1st = list.get(0);
+                WeatherItem weatherLast = list.get(list.size() - 1);
+                mAdapter.updateSections(weather1st.time * 1000, weatherLast.time * 1000);
+                return null;
+            }
+        }, Task.UI_THREAD_EXECUTOR);
     }
 
     @Override
@@ -90,10 +121,11 @@ public class CalendarActivity extends AppCompatActivity
                     @Override
                     public List<POEvent> call() throws Exception {
                         // generate the 200 events between last two months to now
-                        final int NUM_EVENTS = 200;
+                        final int NUM_EVENTS = 100;
                         Calendar c1 = Calendar.getInstance();
-                        c1.set(Calendar.DAY_OF_YEAR, c1.get(Calendar.DAY_OF_YEAR) - 60);
+                        c1.set(Calendar.DAY_OF_YEAR, c1.get(Calendar.DAY_OF_YEAR) - 30);
                         Calendar c2 = Calendar.getInstance();
+                        c2.set(Calendar.DAY_OF_YEAR, c2.get(Calendar.DAY_OF_YEAR) + 30);
                         final long t1 = c1.getTimeInMillis();
                         long t2 = c2.getTimeInMillis();
                         final long gap = (t2 - t1) / NUM_EVENTS;

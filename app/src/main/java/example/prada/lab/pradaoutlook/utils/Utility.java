@@ -10,7 +10,7 @@ import java.util.Calendar;
 
 public class Utility {
 
-    private static final long MILL_SECONDS_A_DAY = 24 * 60 * 60 * 1000;
+    public static final long MILL_SECONDS_A_DAY = 24 * 60 * 60 * 1000;
 
     public static long getDaysBetween(Calendar cal1, Calendar cal2) {
         if (cal1 == null || cal2 == null) {
