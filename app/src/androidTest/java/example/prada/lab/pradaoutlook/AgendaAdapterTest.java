@@ -141,7 +141,6 @@ public class AgendaAdapterTest {
             Date d1 = baseDate.getTime();
             Date d2 = new Date(d1.getTime());
             d2.setMinutes(d2.getMinutes() + 1);
-            android.util.Log.d("TEST", "d1 = " + d1);
             POEvent event = new POEvent("Event" + i, "Label" + i, d1, d2);
             events.add(event);
         }

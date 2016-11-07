@@ -152,19 +152,19 @@ public class AgendaAdapter extends SectioningAdapter {
         POEvent latestEvent = POEvent.createFromCursor(mCursor);
         mFrom.setTime(firstEvent.getFrom());
         mTo.setTime(latestEvent.getTo());
+        mTo.set(Calendar.DAY_OF_YEAR, mTo.get(Calendar.DAY_OF_YEAR) + 1);
         normalizeDate(mFrom);
         normalizeDate(mTo);
 
         long days = Utility.getDaysBetween(mFrom, mTo);
         // Initial list
-        for (int i = 0; i <= days; i++) {
+        for (int i = 0; i < days; i++) {
             mNumOfItemOnSectionList.add(0);
         }
         mCursor.moveToFirst();
         do {
             POEvent e = POEvent.createFromCursor(mCursor);
             int sectionIdx = findSectionIndex(e.getFrom());
-//            android.util.Log.d("TEST", e.getFrom() + " >> " + sectionIdx);
             int count = mNumOfItemOnSectionList.get(sectionIdx);
             mNumOfItemOnSectionList.set(sectionIdx, count + 1);
         } while (mCursor.moveToNext());
