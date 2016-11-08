@@ -1,17 +1,34 @@
 package example.prada.lab.pradaoutlook;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import com.github.sundeepk.compactcalendarview.CompactCalendarView;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.MultiplePermissionsReport;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.multi.CompositeMultiplePermissionsListener;
+import com.karumi.dexter.listener.multi.DialogOnAnyDeniedMultiplePermissionsListener;
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 
 import org.zakariya.stickyheaders.StickyHeaderLayoutManager;
 
@@ -66,34 +83,94 @@ public class CalendarActivity extends AppCompatActivity
 
         tryMoveAgendaListToDate(new Date());
 
-        // FIXME emulate the location manager
-        Task.callInBackground(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                Thread.sleep(3000);
-                return null;
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+            CompositeMultiplePermissionsListener listener = new CompositeMultiplePermissionsListener(
+                DialogOnAnyDeniedMultiplePermissionsListener.Builder
+                    .withContext(this)
+                    .withTitle(R.string.permission_rationale_title)
+                    .withMessage(R.string.permission_rationale_message)
+                    .withButtonText(android.R.string.ok)
+                    .withIcon(R.mipmap.ic_launcher)
+                    .build(),
+                new SampleMultiplePermissionListener());
+
+            Dexter.checkPermissions(listener, Manifest.permission.ACCESS_FINE_LOCATION);
+        } else {
+            queryWeatherWithCurrentLocation();
+        }
+    }
+
+    // collect the location information
+    private Task<Void> queryWeatherWithCurrentLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+            return Task.forError(new IllegalStateException("the location permission doesn't grants"));
+        }
+
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        // Creating an empty criteria object
+        Criteria criteria = new Criteria();
+        // Getting the name of the provider that meets the criteria
+        String provider = locationManager.getBestProvider(criteria, false);
+        if (TextUtils.isEmpty(provider)) {
+            return Task.forError(new IllegalStateException("the location provider is empty"));
+        }
+
+        Location location = locationManager.getLastKnownLocation(provider);
+        return WeatherManager.getInstance(CalendarActivity.this)
+                      .queryWeather(location.getLatitude(), location.getLongitude())
+                      .continueWith(new Continuation<WeatherResponse, Void>() {
+                          @Override
+                          public Void then(Task<WeatherResponse> task) throws Exception {
+                              if (task.isFaulted() || task.isCancelled()) {
+                                  String msg = "query the weather data is failed : " + task.getError().getMessage();
+                                  Snackbar.make(mCoordinator, msg, Snackbar.LENGTH_SHORT).show();
+                                  return null;
+                              }
+                              List<WeatherItem> list = task.getResult().getWeathers();
+                              WeatherItem weather1st = list.get(0);
+                              WeatherItem weatherLast = list.get(list.size() - 1);
+                              mAdapter.updateSections(weather1st.time * 1000, weatherLast.time * 1000);
+                              mAgendaView.invalidate();
+                              Snackbar.make(mCoordinator, "query the weather data is successful", Snackbar.LENGTH_SHORT).show();
+                              return null;
+                          }
+                      }, Task.UI_THREAD_EXECUTOR);
+    }
+
+    private class SampleMultiplePermissionListener implements MultiplePermissionsListener {
+
+        @Override public void onPermissionsChecked(MultiplePermissionsReport report) {
+            if (report.areAllPermissionsGranted()) {
+                queryWeatherWithCurrentLocation();
             }
-        }).onSuccessTask(new Continuation<Void, Task<WeatherResponse>>() {
-            @Override
-            public Task<WeatherResponse> then(Task<Void> task) throws Exception {
-                return WeatherManager.getInstance(CalendarActivity.this)
-                                     .handleLocation(23.6978, 120.9605);
-            }
-        }).continueWith(new Continuation<WeatherResponse, Void>() {
-            @Override
-            public Void then(Task<WeatherResponse> task) throws Exception {
-                if (task.isFaulted() || task.isCancelled()) {
-                    task.getError().printStackTrace();
-                    return null;
-                }
-                List<WeatherItem> list = task.getResult().getWeathers();
-                WeatherItem weather1st = list.get(0);
-                WeatherItem weatherLast = list.get(list.size() - 1);
-                mAdapter.updateSections(weather1st.time * 1000, weatherLast.time * 1000);
-                mAgendaView.invalidate();
-                return null;
-            }
-        }, Task.UI_THREAD_EXECUTOR);
+        }
+
+        @Override public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions,
+                                                                 final PermissionToken token) {
+            new AlertDialog.Builder(CalendarActivity.this)
+                .setTitle(R.string.permission_rationale_title)
+                .setMessage(R.string.permission_rationale_message)
+                .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        token.cancelPermissionRequest();
+                    }
+                })
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        token.continuePermissionRequest();
+                    }
+                })
+                .setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override public void onDismiss(DialogInterface dialog) {
+                        token.cancelPermissionRequest();
+                    }
+                }).show();
+        }
     }
 
     private boolean tryMoveAgendaListToDate(Date date) {
