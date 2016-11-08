@@ -10,7 +10,6 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -48,7 +47,7 @@ public class AgendaAdapterTest {
         assertEquals(0, mAdapter.getNumberOfItemsInSection(0));
 
         int NUM_OF_DAYS = 20;
-        mStore.addEvents(createEventList(1, NUM_OF_DAYS));
+        mStore.addEvents(DataGenerator.createEventList(1, NUM_OF_DAYS));
         mAdapter.updateEvents();
         assertEquals(NUM_OF_DAYS, mAdapter.getNumberOfSections());
         for (int i = 0; i < NUM_OF_DAYS ; i++) {
@@ -93,7 +92,7 @@ public class AgendaAdapterTest {
     @Test
     public void testFindSectionIndex() {
         int NUM_OF_DAYS = 30;
-        mStore.addEvents(createEventList(1, NUM_OF_DAYS));
+        mStore.addEvents(DataGenerator.createEventList(1, NUM_OF_DAYS));
         mAdapter.updateEvents();
         assertEquals(NUM_OF_DAYS, mAdapter.getNumberOfSections());
 
@@ -113,7 +112,7 @@ public class AgendaAdapterTest {
         assertNull(mAdapter.queryEvent(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
         int NUM_OF_DAYS = 10;
-        mStore.addEvents(createEventList(1, NUM_OF_DAYS));
+        mStore.addEvents(DataGenerator.createEventList(1, NUM_OF_DAYS));
         mAdapter.updateEvents();
         assertEquals(NUM_OF_DAYS, mAdapter.getNumberOfSections());
         for (int i = 0; i < NUM_OF_DAYS ; i++) {
@@ -128,22 +127,4 @@ public class AgendaAdapterTest {
         assertNull(mAdapter.queryEvent(Integer.MAX_VALUE, Integer.MAX_VALUE));
     }
 
-    private List<POEvent> createEventList(int startDay, int endDay) {
-
-        Calendar baseDate = Calendar.getInstance();
-        baseDate.set(Calendar.YEAR, 2020);
-        baseDate.set(Calendar.MONTH, 1);
-        baseDate.set(Calendar.DAY_OF_MONTH, 1);
-
-        List<POEvent> events = new ArrayList<>();
-        for (int i = startDay; i <= endDay ; i++) {
-            baseDate.set(Calendar.DAY_OF_YEAR, i);
-            Date d1 = baseDate.getTime();
-            Date d2 = new Date(d1.getTime());
-            d2.setMinutes(d2.getMinutes() + 1);
-            POEvent event = new POEvent("Event" + i, "Label" + i, d1, d2);
-            events.add(event);
-        }
-        return events;
-    }
 }

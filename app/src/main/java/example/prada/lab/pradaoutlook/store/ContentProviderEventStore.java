@@ -61,16 +61,16 @@ public class ContentProviderEventStore extends BaseEventStore {
     }
 
     @Override
-    public boolean hasEvents(long t1, long t2) {
+    public int countEvents(long t1, long t2) {
         if (t1 < 0 || t2 < 0) {
             throw new IllegalArgumentException("the timestamp should be the positive value, but t1 = " + t1 + ", t2 = " + t2);
         }
         return ProviderAction.query(EventContentProvider.EVENT_URI)
                              .projection(OutlookDbHelper.EVENT_ID)
-                             .where(OutlookDbHelper.EVENT_START_TIME + " > " + t1 + " OR "+
-                                    OutlookDbHelper.EVENT_END_TIME + " < " + t2)
+                             .where(OutlookDbHelper.EVENT_START_TIME + " >= " + t1 + " AND "+
+                                    OutlookDbHelper.EVENT_START_TIME + " <= " + t2)
                              .perform(mResolver)
-                             .getCount() > 0;
+                             .getCount();
     }
 
     @Override

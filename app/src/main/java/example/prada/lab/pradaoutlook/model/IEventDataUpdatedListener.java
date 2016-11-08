@@ -8,5 +8,10 @@ import android.database.Cursor;
  */
 
 public interface IEventDataUpdatedListener {
+
+    /**
+     * this callback will trigger when the store has inserted the event through {@IEventStore.addEvents()}
+     * @param events the cursor indicates the whole events in the store.
+     */
     void onEventsInsert(Cursor events);
 }

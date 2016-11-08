@@ -45,7 +45,7 @@ public class EventContentProviderTest {
     @Test
     public void testDeleteItems() {
         int NUM = 10;
-        List<Long> ids = insertEvents(createEventList(NUM));
+        List<Long> ids = insertEvents(DataGenerator.createEventList(NUM));
         assertEquals(NUM, ids.size());
         assertEquals(NUM, ProviderAction
             .query(EventContentProvider.EVENT_URI)
@@ -60,7 +60,7 @@ public class EventContentProviderTest {
     @Test
     public void testDeleteAnItem() {
         int NUM = 10;
-        List<Long> ids = insertEvents(createEventList(NUM));
+        List<Long> ids = insertEvents(DataGenerator.createEventList(NUM));
         assertEquals(NUM, ids.size());
         assertEquals(NUM, getTotalEvents());
 
@@ -84,7 +84,7 @@ public class EventContentProviderTest {
     @Test
     public void testInsertItems() {
         int NUM = 100;
-        List<POEvent> events = createEventList(NUM);
+        List<POEvent> events = DataGenerator.createEventList(NUM);
         List<Long> ids = insertEvents(events);
         assertEquals(NUM, ids.size());
         assertEquals(NUM, ProviderAction
@@ -237,20 +237,6 @@ public class EventContentProviderTest {
             e.setId(id);
         }
         return ids;
-    }
-    private List<POEvent> createEventList(int num) {
-        List<POEvent> events = new ArrayList<>();
-        for (int i = 1; i <= num; i++) {
-            Date d1 = new Date();
-            d1.setYear(2000);
-            d1.setMonth(i);
-            Date d2 = new Date();
-            d2.setYear(2000);
-            d2.setMonth(i + 1);
-            POEvent event = new POEvent("Event" + i, "Label" + i, d1, d2);
-            events.add(event);
-        }
-        return events;
     }
 
     private ContentValues getContentValues(Cursor cursor) {

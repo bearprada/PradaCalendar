@@ -7,6 +7,11 @@ import android.content.Context;
  */
 
 public class EventStoreFactory {
+    /**
+     * Getting the store instance which store should be the singleton.
+     * @param ctx
+     * @return the event store's implementation
+     */
     public static IEventStore getInstance(Context ctx) {
         return ContentProviderEventStore.getInstance(ctx);
     }

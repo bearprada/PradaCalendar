@@ -17,8 +17,9 @@ import example.prada.lab.pradaoutlook.weather.WeatherManager;
 
 /**
  * Created by prada on 10/29/16.
+ *
+ * this view holder class will show the section's header in the list, which includes time and weather.
  */
-
 public class DayViewHolder extends SectioningAdapter.HeaderViewHolder{
     private final TextView mTxtDate;
     private final ImageView mWeatherIcon;

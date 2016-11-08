@@ -14,8 +14,9 @@ import example.prada.lab.pradaoutlook.utils.Utility;
 
 /**
  * Created by prada on 10/29/16.
+ *
+ * this view holder class will show the event's detail on the list
  */
-
 public class EventViewHolder extends SectioningAdapter.ItemViewHolder {
     private static final SimpleDateFormat sDateFormat = new SimpleDateFormat("h:m a");
 

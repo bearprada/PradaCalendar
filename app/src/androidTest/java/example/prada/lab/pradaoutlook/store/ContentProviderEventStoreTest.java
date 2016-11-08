@@ -15,10 +15,8 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
-import example.prada.lab.pradaoutlook.model.IEventDataUpdatedListener;
+import example.prada.lab.pradaoutlook.DataGenerator;
 import example.prada.lab.pradaoutlook.model.POEvent;
 
 /**
@@ -44,7 +42,7 @@ public class ContentProviderEventStoreTest {
 
     @Test
     public void testAddAndQueryEvent() {
-        List<POEvent> events = createEventList(1);
+        List<POEvent> events = DataGenerator.createEventList(1);
         mStore.addEvents(events);
         assertEquals(1, mStore.countEvents());
         Cursor cursor = mStore.getEvents();
@@ -56,7 +54,7 @@ public class ContentProviderEventStoreTest {
 
     @Test
     public void testAddAndQuery10Event() {
-        List<POEvent> events = createEventList(10);
+        List<POEvent> events = DataGenerator.createEventList(10);
         mStore.addEvents(events);
         assertEquals(10, mStore.countEvents());
         Cursor cursor = mStore.getEvents();
@@ -95,7 +93,7 @@ public class ContentProviderEventStoreTest {
     @Test
     public void testInsertEventsInRandomOrder() {
         int NUM = 200;
-        List<POEvent> events = createEventList(NUM);
+        List<POEvent> events = DataGenerator.createEventList(NUM);
         Collections.shuffle(events);
         mStore.addEvents(events);
         assertEquals(NUM, mStore.countEvents());
@@ -107,7 +105,7 @@ public class ContentProviderEventStoreTest {
     @Test
     public void testGetFirstAndLatestEventTime() {
         int NUM = 100;
-        List<POEvent> events = createEventList(NUM);
+        List<POEvent> events = DataGenerator.createEventList(NUM);
         Date firstTime = events.get(0).getFrom();
         Date lastTime = events.get(events.size() - 1).getTo();
         mStore.addEvents(events);
@@ -141,14 +139,14 @@ public class ContentProviderEventStoreTest {
 
     @Test
     public void testHasEvents() {
-        int NUM = 66;
-        List<POEvent> events = createEventList(NUM);
+        int NUM = 100;
+        List<POEvent> events = DataGenerator.createEventList(NUM);
         Date t1 = events.get(0).getFrom();
         Date t2 = events.get(1).getFrom();
         Date tn = events.get(events.size() - 1).getFrom();
         mStore.addEvents(events);
-        assertTrue(mStore.hasEvents(t1.getTime(), t2.getTime()));
-        assertTrue(mStore.hasEvents(t2.getTime(), tn.getTime()));
+        assertEquals(NUM, mStore.countEvents(t1.getTime(), tn.getTime()));
+        assertEquals(2, mStore.countEvents(t1.getTime(), t2.getTime()));
     }
 
     @Test
@@ -158,13 +156,13 @@ public class ContentProviderEventStoreTest {
         t1.setYear(1700);
         Date t2 = new Date();
         t2.setYear(3000);
-        assertFalse(mStore.hasEvents(t1.getTime(), t2.getTime()));
+        assertEquals(0, mStore.countEvents(t1.getTime(), t2.getTime()));
     }
 
     @Test
     public void testHasEventsWithWrongParameters() {
         try {
-            mStore.hasEvents(-1, -1);
+            mStore.countEvents(-1, -1);
         } catch (IllegalArgumentException e) {
             // pass
         } catch (Throwable t) {
@@ -172,7 +170,7 @@ public class ContentProviderEventStoreTest {
         }
 
         try {
-            mStore.hasEvents(-1, System.currentTimeMillis());
+            mStore.countEvents(-1, System.currentTimeMillis());
         } catch (IllegalArgumentException e) {
             // pass
         } catch (Throwable t) {
@@ -180,7 +178,7 @@ public class ContentProviderEventStoreTest {
         }
 
         try {
-            mStore.hasEvents(System.currentTimeMillis(), -1);
+            mStore.countEvents(System.currentTimeMillis(), -1);
         } catch (IllegalArgumentException e) {
             // pass
         } catch (Throwable t) {
@@ -215,21 +213,6 @@ public class ContentProviderEventStoreTest {
 //            }
 //        }
 //        mStore.removeListener(listener);
-    }
-
-    private List<POEvent> createEventList(int num) {
-        List<POEvent> events = new ArrayList<>();
-        for (int i = 1; i <= num; i++) {
-            Date d1 = new Date();
-            d1.setYear(2000);
-            d1.setMonth(i);
-            Date d2 = new Date();
-            d2.setYear(2000);
-            d2.setMonth(i + 1);
-            POEvent event = new POEvent("Event" + i, "Label" + i, d1, d2);
-            events.add(event);
-        }
-        return events;
     }
 
     private void verifyData(Cursor cursor) {

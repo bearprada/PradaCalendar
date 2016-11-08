@@ -12,6 +12,13 @@ public class Utility {
 
     public static final long MILL_SECONDS_A_DAY = 24 * 60 * 60 * 1000;
 
+    /**
+     * finding the days between the two calendar objects.
+     * @param cal1 the start point of the duration
+     * @param cal2 the end point of the duration
+     * @return the count of days between the two calendar objects. It will return zero if the input
+     * objects is null, or the calendar objects have wrong order.
+     */
     public static long getDaysBetween(Calendar cal1, Calendar cal2) {
         if (cal1 == null || cal2 == null) {
             return 0;
@@ -27,6 +34,14 @@ public class Utility {
         return ((t2 - t1) / MILL_SECONDS_A_DAY);
     }
 
+    /**
+     * converting the among of mill-seconds into the human readable string. e.g,
+     *      1m : 1 minute
+     *      10h3m : 10 hours and 3 minutes
+     *      1d20m : 1 day and 20 minutes
+     * @param millSeconds the duration(ms) between the two timestamps
+     * @return the translated string for represent duration.
+     */
     public static @NonNull String getDurationString(long millSeconds) {
         long seconds = millSeconds / 1000;
         if (seconds < 60) { // it's less then 1 min.
@@ -48,6 +63,12 @@ public class Utility {
         return sb.toString();
     }
 
+    /**
+     * translating the day integer into the human readable string.
+     * @param day the integer between 1 to 7
+     * @return the translated string of day of a week
+     * @throws IllegalArgumentException the integer of day is out of range [1 - 7]
+     */
     public static String convertDayStr(int day) {
         switch(day) {
             case Calendar.SUNDAY:
@@ -69,6 +90,12 @@ public class Utility {
         }
     }
 
+    /**
+     * translating the month integer to the human readable string.
+     * @param month integer between 0 to 11
+     * @return the translated month string
+     * @throws IllegalArgumentException the month parameter is out of range between 0 - 11
+     */
     public static String convertMonthStr(int month) {
         switch (month) {
             case Calendar.JANUARY:
