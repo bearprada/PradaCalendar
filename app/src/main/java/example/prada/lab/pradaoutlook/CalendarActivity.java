@@ -159,9 +159,10 @@ public class CalendarActivity extends AppCompatActivity
                     @Override
                     public Void then(Task<Void> task) throws Exception {
                         onEventsInsert(store.getEvents());
+                        Snackbar.make(mCoordinator, "cleaning the events successful", Snackbar.LENGTH_SHORT).show();
                         return null;
                     }
-                });
+                }, Task.UI_THREAD_EXECUTOR);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -189,6 +190,7 @@ public class CalendarActivity extends AppCompatActivity
     public void onEventsInsert(Cursor cursor) {
         mAdapter.updateEvents();
         updateCalenderView(cursor);
+        mAgendaView.invalidate();
     }
 
     private void updateCalenderView(@NonNull Cursor cursor) {
