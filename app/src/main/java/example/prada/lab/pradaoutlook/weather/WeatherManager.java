@@ -98,6 +98,18 @@ public class WeatherManager {
         });
     }
 
+    /**
+     * Getting the weather information from the darksky.net.
+     *
+     * please check more detail in here https://darksky.net/dev/docs/forecast
+     *
+     * @param queue the networking queue for the volley requests
+     * @param latitude the user's current latitude
+     * @param longitude the user's current longitude
+     * @return the weather result from the api call
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
     @SuppressLint("DefaultLocale")
     private WeatherResponse queryWeather(RequestQueue queue, double latitude, double longitude)
         throws ExecutionException, InterruptedException {

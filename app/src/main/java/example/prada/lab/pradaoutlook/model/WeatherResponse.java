@@ -14,8 +14,21 @@ import java.util.List;
 
 /**
  * Created by prada on 11/6/16.
+ *
+ * the data object for the response data from darksky.net, e.g :
+ * {
+ *     "timezone":"...",
+ *     "daily":{
+ *         "data":[
+ *             {...},
+ *             {...},
+ *             {...},
+ *         ]
+ *     }
+ * }}
+ *
+ * document : https://darksky.net/dev/docs/forecast
  */
-
 public class WeatherResponse {
     private List<WeatherItem> weathers = new ArrayList<>();
 
@@ -26,6 +39,9 @@ public class WeatherResponse {
     private WeatherResponse() {
     }
 
+    /**
+     * a customize deserializer for the nested json structure from darksky.net.
+     */
     public static class WeatherResponseReader implements JsonDeserializer<WeatherResponse> {
 
         private static final Type sToken = new TypeToken<ArrayList<WeatherItem>>(){}.getType();

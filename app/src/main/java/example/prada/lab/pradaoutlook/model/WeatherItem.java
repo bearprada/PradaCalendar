@@ -4,8 +4,10 @@ import com.google.gson.annotations.SerializedName;
 
 /**
  * Created by prada on 11/6/16.
+ *
+ * the data object represent the weather information for each days
+ * document : https://darksky.net/dev/docs/forecast
  */
-
 public class WeatherItem {
 
     @SerializedName("time")

@@ -64,6 +64,8 @@ public class CalendarActivity extends AppCompatActivity
         mAdapter = new AgendaAdapter(this);
         mAgendaView.setAdapter(mAdapter);
 
+        tryMoveAgendaListToDate(new Date());
+
         // FIXME emulate the location manager
         Task.callInBackground(new Callable<Void>() {
             @Override
@@ -88,9 +90,19 @@ public class CalendarActivity extends AppCompatActivity
                 WeatherItem weather1st = list.get(0);
                 WeatherItem weatherLast = list.get(list.size() - 1);
                 mAdapter.updateSections(weather1st.time * 1000, weatherLast.time * 1000);
+                mAgendaView.invalidate();
                 return null;
             }
         }, Task.UI_THREAD_EXECUTOR);
+    }
+
+    private boolean tryMoveAgendaListToDate(Date date) {
+        try {
+            mAgendaView.scrollToPosition(mAdapter.findSectionPosition(date));
+            return true;
+        } catch (IndexOutOfBoundsException e) {
+            return false;
+        }
     }
 
     @Override
@@ -171,18 +183,14 @@ public class CalendarActivity extends AppCompatActivity
 
     @Override
     public void onDayClick(Date dateClicked) {
-        try {
-            mAgendaView.scrollToPosition(mAdapter.findSectionPosition(dateClicked));
-        } catch (IndexOutOfBoundsException e) {
+        if (!tryMoveAgendaListToDate(dateClicked)) {
             Snackbar.make(mCoordinator, R.string.select_wrong_date, Snackbar.LENGTH_SHORT).show();
         }
     }
 
     @Override
     public void onMonthScroll(Date firstDayOfNewMonth) {
-        try {
-            mAgendaView.scrollToPosition(mAdapter.findSectionPosition(firstDayOfNewMonth));
-        } catch (IndexOutOfBoundsException ignored) {}
+        tryMoveAgendaListToDate(firstDayOfNewMonth);
         setTitle(getTitleString(firstDayOfNewMonth));
     }
 
