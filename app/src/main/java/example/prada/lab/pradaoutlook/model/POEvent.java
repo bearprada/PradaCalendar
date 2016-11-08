@@ -14,6 +14,8 @@ import example.prada.lab.pradaoutlook.db.OutlookDbHelper;
 
 /**
  * Created by prada on 10/27/16.
+ *
+ * this data object represent the event's detail
  */
 public class POEvent {
     private final String mTitle;
@@ -22,6 +24,15 @@ public class POEvent {
     private final Date mTo;
     private Long mId;
 
+    /**
+     * create the event object
+     *
+     * @param title the event's title, it should not be null or empty
+     * @param label the event's label, it present the event's category
+     * @param from the event's start time, it should not be null, and it should be less then {@link POEvent#mTo}
+     * @param to the event's end time, it should not be null, and it should large then {@link POEvent#mFrom}
+     * @throws IllegalArgumentException
+     */
     public POEvent(String title, String label, Date from, Date to) throws IllegalArgumentException {
         mTitle = title;
         mLabel = label;
@@ -80,12 +91,24 @@ public class POEvent {
         return Color.parseColor("#00FF00");
     }
 
+    /**
+     * create the event object from the cursor
+     * @param cursor the cursor object that point to the data we want to convert.
+     * @return the data object with mapped data from the cursor
+     */
     public static POEvent createFromCursor(Cursor cursor) {
+        if (cursor == null) {
+            throw new IllegalArgumentException("the cursor should not be null");
+        }
         ContentValues values = new ContentValues();
         DatabaseUtils.cursorRowToContentValues(cursor, values);
         return new POEvent(values);
     }
 
+    /**
+     * create the content value object for the content provider operation.
+     * @return a content value object has the event's data
+     */
     public ContentValues getContentValues() {
         ContentValues cv = new ContentValues();
         cv.put(OutlookDbHelper.EVENT_TITLE, mTitle);
@@ -124,6 +147,12 @@ public class POEvent {
         return result;
     }
 
+    /**
+     * updating the event id, the id should be the same as the id in the SQLite database
+     *
+     * @param id the row id that provided by SQLite database
+     * @throws IllegalArgumentException when {@code id <= 0}
+     */
     public void setId(long id) {
         if (id <= 0) {
             throw new IllegalArgumentException("the event id should be over 0");

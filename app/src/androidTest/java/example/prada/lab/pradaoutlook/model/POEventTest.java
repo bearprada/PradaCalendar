@@ -117,6 +117,7 @@ public class POEventTest {
         String label = "Testcase5Label";
         long id = 100L;
 
+        createEventWithWrongCursor(null);
         createEventWithWrongCursor(createCursor(-1, title, label, d1, d2));
         createEventWithWrongCursor(createCursor(id, "", label, d1, d2));
         createEventWithWrongCursor(createCursor(id, title, "", d1, d2));

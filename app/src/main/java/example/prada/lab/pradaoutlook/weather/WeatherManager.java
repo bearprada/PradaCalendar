@@ -8,7 +8,6 @@ import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.RequestFuture;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.util.List;
@@ -24,8 +23,9 @@ import example.prada.lab.pradaoutlook.utils.Utility;
 
 /**
  * Created by prada on 11/6/16.
+ *
+ * this manager class can query and keep the forecasting weather information through the internet.
  */
-
 public class WeatherManager {
     private static final String TOKEN = "b1b5215fe9d0c1bd29ce15b6c8088be0";
     private static final String URL = "https://api.darksky.net/forecast/%s/%f,%f?exclude=currently,hourly,minutely,alerts,flags";
@@ -45,6 +45,12 @@ public class WeatherManager {
         mQueue = Volley.newRequestQueue(ctx);
     }
 
+    /**
+     * convert the icon resource by the string
+     *
+     * @param iconStr the string should be "rain", "snow", "wind"...etc
+     * @return the icon that showed the weather, the default icon is "clear"
+     */
     public static @DrawableRes int getIcon(String iconStr) {
         switch (iconStr == null ? "" : iconStr) {
             case "rain":
@@ -68,7 +74,14 @@ public class WeatherManager {
         }
     }
 
-    public Task<WeatherResponse> handleLocation(final double lat, final double lng) {
+    /**
+     * query the weather information with the specific latitude and longitude.
+     *
+     * @param lat the specific location's latitude
+     * @param lng the specific location's longitude
+     * @return the async task that will response the weather objects from server
+     */
+    public Task<WeatherResponse> queryWeather(final double lat, final double lng) {
         mQueryWeatherTask = Task.callInBackground(new Callable<WeatherResponse>() {
             @Override
             public WeatherResponse call() throws Exception {
@@ -80,6 +93,16 @@ public class WeatherManager {
 
     private Exception mNoWeatherResultException = new Exception("no any weather result yet");
     private Exception mWeatherNotFoundException = new Exception("no get any weather");
+
+    /**
+     * fetching the weather that's more close to a day
+     *
+     * @param timeInMillis the timestamp for query the weather data
+     * @return an async task that response a weather that's more close to the timestamp.
+     *          but it might return the error state if
+     *          1) the loading process is failed or pending.
+     *          2) it can't found any weather information that close to your input timestamp.
+     */
     public Task<WeatherItem> fetchWeather(final long timeInMillis) {
         if (mQueryWeatherTask == null) {
             return Task.forError(mNoWeatherResultException);
@@ -107,8 +130,8 @@ public class WeatherManager {
      * @param latitude the user's current latitude
      * @param longitude the user's current longitude
      * @return the weather result from the api call
-     * @throws ExecutionException
-     * @throws InterruptedException
+     * @throws ExecutionException if the networking task is interrupted
+     * @throws InterruptedException if the networking task is interrupted
      */
     @SuppressLint("DefaultLocale")
     private WeatherResponse queryWeather(RequestQueue queue, double latitude, double longitude)
