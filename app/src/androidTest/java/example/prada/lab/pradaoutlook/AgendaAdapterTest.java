@@ -103,7 +103,7 @@ public class AgendaAdapterTest {
         events.add(new POEvent("TestCase1Title", "TestCase1Label", c2.getTime(), c2.getTime()));
         mStore.addEvents(events);
         mAdapter.updateEvents();
-        assertEquals(Utility.getDaysBetween(c1, c2), mAdapter.getNumberOfSections());
+        assertEquals(Utility.getDaysBetween(c1, c2) + 1, mAdapter.getNumberOfSections());
     }
 
     @Test

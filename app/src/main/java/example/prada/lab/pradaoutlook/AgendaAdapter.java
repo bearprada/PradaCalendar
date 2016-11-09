@@ -4,16 +4,15 @@ import android.content.Context;
 import android.database.Cursor;
 import android.support.annotation.NonNull;
 import android.support.v4.util.LruCache;
+import android.util.SparseIntArray;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import org.zakariya.stickyheaders.SectioningAdapter;
 
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import example.prada.lab.pradaoutlook.model.POEvent;
 import example.prada.lab.pradaoutlook.store.EventStoreFactory;
@@ -42,7 +41,8 @@ public class AgendaAdapter extends SectioningAdapter {
 
     private LruCache<Integer, POEvent> mEventCache = new LruCache<>(256);
 
-    private final List<Integer> mNumOfItemOnSectionList = Collections.synchronizedList(new ArrayList<Integer>());
+    private final SparseIntArray mNumOfItemOnSectionList = new SparseIntArray();
+    private final AtomicInteger mTotalSections = new AtomicInteger(0);
 
     public AgendaAdapter(@NonNull Context ctx) {
         mInflater = LayoutInflater.from(ctx);
@@ -95,7 +95,7 @@ public class AgendaAdapter extends SectioningAdapter {
 
     @Override
     public int getNumberOfSections() {
-        return mNumOfItemOnSectionList.size();
+        return mTotalSections.get();
     }
 
     @Override
@@ -114,7 +114,7 @@ public class AgendaAdapter extends SectioningAdapter {
 
     @Override
     public int getNumberOfItemsInSection(int sectionIndex) {
-        if (sectionIndex >= mNumOfItemOnSectionList.size()) {
+        if (sectionIndex >= mTotalSections.get()) {
             return 0;
         }
         int numEvents = mNumOfItemOnSectionList.get(sectionIndex);
@@ -137,10 +137,9 @@ public class AgendaAdapter extends SectioningAdapter {
     public int getSectionIndex(@NonNull Date date) {
         long millSeconds = date.getTime() - mFrom.getTimeInMillis();
         int index =  (int) Math.floor(millSeconds / MILL_SECONDS_IN_A_DAY);
-        android.util.Log.d("TEST","getSectionIndex : " + date + " >> ms = " + millSeconds + " >>>> idx " + index);
-        if (index >= mNumOfItemOnSectionList.size()) {
+        if (index >= mTotalSections.get()) {
             throw new IndexOutOfBoundsException("the range should be 0 to " +
-                mNumOfItemOnSectionList.size() + ", but it's " + index);
+                mTotalSections + ", but it's " + index);
         }
         return index;
     }
@@ -148,7 +147,7 @@ public class AgendaAdapter extends SectioningAdapter {
     private void rebuildSectionsMetadata() {
         mEventCache.evictAll();
         mNumOfItemOnSectionList.clear();
-
+        mTotalSections.set(0);
         if (mCursor.getCount() <= 0) {
             Date date = new Date();
             mFrom.setTime(date);
@@ -161,21 +160,21 @@ public class AgendaAdapter extends SectioningAdapter {
         POEvent latestEvent = POEvent.createFromCursor(mCursor);
         mFrom.setTime(firstEvent.getFrom());
         mTo.setTime(latestEvent.getTo());
-//        mTo.set(Calendar.DAY_OF_YEAR, mTo.get(Calendar.DAY_OF_YEAR) + 1);
         normalizeDate(mFrom);
         normalizeDate(mTo);
         mTo.setTimeInMillis(mTo.getTimeInMillis() + Utility.MILL_SECONDS_A_DAY);
         long days = Utility.getDaysBetween(mFrom, mTo);
-        // Initial list
-        for (int i = 0; i < days; i++) {
-            mNumOfItemOnSectionList.add(0);
-        }
+        mTotalSections.set((int) days);
         mCursor.moveToFirst();
         do {
             POEvent e = POEvent.createFromCursor(mCursor);
             int sectionIdx = getSectionIndex(e.getFrom());
             int count = mNumOfItemOnSectionList.get(sectionIdx);
-            mNumOfItemOnSectionList.set(sectionIdx, count + 1);
+            if (count == 0) {
+                mNumOfItemOnSectionList.put(sectionIdx, 1);
+            } else {
+                mNumOfItemOnSectionList.put(sectionIdx, count + 1);
+            }
         } while (mCursor.moveToNext());
     }
 
@@ -202,15 +201,20 @@ public class AgendaAdapter extends SectioningAdapter {
     }
 
     private int getCursorIndex(int sectionIndex, int itemIndex) {
-        if (sectionIndex >= mNumOfItemOnSectionList.size()) {
+        if (sectionIndex >= mTotalSections.get()) {
             return -1;
         }
         int cursorIndex = 0;
         if (itemIndex < mNumOfItemOnSectionList.get(sectionIndex)) {
             cursorIndex = itemIndex;
         }
-        for (int i = 0; i < sectionIndex ; i++) {
-            cursorIndex += mNumOfItemOnSectionList.get(i);
+        for (int i = 0; i < mNumOfItemOnSectionList.size(); i++) {
+            int k = mNumOfItemOnSectionList.keyAt(i);
+            if (k < sectionIndex) {
+                cursorIndex += mNumOfItemOnSectionList.get(k);
+            } else {
+                break;
+            }
         }
         return cursorIndex;
     }
