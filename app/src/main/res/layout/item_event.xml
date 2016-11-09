@@ -27,9 +27,9 @@
         android:id="@+id/image_label"
         android:layout_width="16dp"
         android:layout_height="16dp"
-        android:background="#A53E5E"
         android:layout_margin="10dp"
-        android:layout_toRightOf="@id/txt_time"/>
+        android:layout_toRightOf="@id/txt_time"
+        tools:background="@drawable/label_birthday" />
 
     <TextView
         android:id="@+id/txt_event_title"

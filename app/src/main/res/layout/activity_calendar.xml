@@ -32,10 +32,11 @@
                 app:layout_scrollFlags="scroll|enterAlways"
                 app:compactCalendarTextSize="12sp"
                 app:compactCalendarBackgroundColor="?colorPrimary"
-                app:compactCalendarTextColor="#fff"
-                app:compactCalendarCurrentSelectedDayBackgroundColor="#E57373"
-                app:compactCalendarCurrentDayBackgroundColor="#B71C1C"
-                app:compactCalendarMultiEventIndicatorColor="#fff" />
+                app:compactCalendarTextColor="@android:color/white"
+                app:compactCalendarEventIndicatorStyle="small_indicator"
+                app:compactCalendarCurrentSelectedDayBackgroundColor="@color/colorAccent"
+                app:compactCalendarCurrentDayBackgroundColor="@color/colorAccent"
+                app:compactCalendarMultiEventIndicatorColor="@android:color/white" />
 
     </android.support.design.widget.AppBarLayout>
 

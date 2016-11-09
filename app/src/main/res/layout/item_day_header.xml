@@ -7,7 +7,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="0.5dp"
-        android:background="#666666"/>
+        android:background="@color/gray"/>
 
     <TextView
         android:id="@+id/text_date"
@@ -15,7 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:textStyle="bold"
-        android:textColor="#666666"
+        android:textColor="@color/gray"
         android:layout_marginLeft="16dp"
         tools:text="FRIDAY, FEBRUARY 06" />
 
@@ -23,13 +23,13 @@
         android:layout_width="match_parent"
         android:layout_height="0.5dp"
         android:layout_alignParentBottom="true"
-        android:background="#666666"/>
+        android:background="@color/gray"/>
 
     <TextView
         android:id="@+id/text_temperature"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:textColor="#666666"
+        android:textColor="@color/gray"
         android:textStyle="bold"
         android:layout_marginRight="16dp"
         android:layout_alignParentRight="true"

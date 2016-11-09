@@ -11,6 +11,7 @@ import java.util.Calendar;
 public class Utility {
 
     public static final long MILL_SECONDS_A_DAY = 24 * 60 * 60 * 1000;
+    public static final long MILL_SECONDS_A_HOUR = 60 * 60 * 1000;
 
     /**
      * finding the days between the two calendar objects.

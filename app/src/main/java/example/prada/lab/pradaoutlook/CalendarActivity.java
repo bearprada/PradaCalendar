@@ -32,8 +32,6 @@ import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 
 import org.zakariya.stickyheaders.StickyHeaderLayoutManager;
 
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -46,6 +44,7 @@ import example.prada.lab.pradaoutlook.model.WeatherItem;
 import example.prada.lab.pradaoutlook.model.WeatherResponse;
 import example.prada.lab.pradaoutlook.store.EventStoreFactory;
 import example.prada.lab.pradaoutlook.store.IEventStore;
+import example.prada.lab.pradaoutlook.utils.MockEventsGenerator;
 import example.prada.lab.pradaoutlook.utils.Utility;
 import example.prada.lab.pradaoutlook.weather.WeatherManager;
 
@@ -91,7 +90,7 @@ public class CalendarActivity extends AppCompatActivity
                     .withTitle(R.string.permission_rationale_title)
                     .withMessage(R.string.permission_rationale_message)
                     .withButtonText(android.R.string.ok)
-                    .withIcon(R.mipmap.ic_launcher)
+                    .withIcon(R.drawable.ic_launcher)
                     .build(),
                 new SampleMultiplePermissionListener());
 
@@ -175,7 +174,7 @@ public class CalendarActivity extends AppCompatActivity
 
     private boolean tryMoveAgendaListToDate(Date date) {
         try {
-            mAgendaView.scrollToPosition(mAdapter.findSectionPosition(date));
+            mAgendaView.scrollToPosition(mAdapter.getSectionPosition(date));
             return true;
         } catch (IndexOutOfBoundsException e) {
             return false;
@@ -202,6 +201,14 @@ public class CalendarActivity extends AppCompatActivity
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        boolean hasData = EventStoreFactory.getInstance(this).countEvents() > 0;
+        menu.findItem(R.id.menuitem_add_items).setVisible(!hasData);
+        menu.findItem(R.id.menuitem_clean_items).setVisible(hasData);
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         final IEventStore store = EventStoreFactory.getInstance(CalendarActivity.this);
         switch (item.getItemId()) {
@@ -209,23 +216,7 @@ public class CalendarActivity extends AppCompatActivity
                 Task.callInBackground(new Callable<List<POEvent>>() {
                     @Override
                     public List<POEvent> call() throws Exception {
-                        // generate the 200 events between last two months to now
-                        final int NUM_EVENTS = 100;
-                        Calendar c1 = Calendar.getInstance();
-                        c1.set(Calendar.DAY_OF_YEAR, c1.get(Calendar.DAY_OF_YEAR) - 30);
-                        Calendar c2 = Calendar.getInstance();
-                        c2.set(Calendar.DAY_OF_YEAR, c2.get(Calendar.DAY_OF_YEAR) + 30);
-                        final long t1 = c1.getTimeInMillis();
-                        long t2 = c2.getTimeInMillis();
-                        final long gap = (t2 - t1) / NUM_EVENTS;
-
-                        java.util.Random random = new java.util.Random();
-                        List<POEvent> data = new ArrayList<>();
-                        for (int i = 0; i < NUM_EVENTS ; i++) {
-                            long eventT1 = t1 + (i * gap);
-                            long eventT2 = eventT1 + (random.nextInt(3600) * 1000);
-                            data.add(new POEvent("Event-" + i, "TODO", new Date(eventT1), new Date(eventT2)));
-                        }
+                        List<POEvent> data = MockEventsGenerator.generateEvents();
                         store.addEvents(data);
                         return data;
                     }
@@ -233,6 +224,7 @@ public class CalendarActivity extends AppCompatActivity
                     @Override
                     public Void then(Task<List<POEvent>> task) throws Exception {
                         Snackbar.make(mCoordinator, "import the events successful", Snackbar.LENGTH_SHORT).show();
+                        invalidateOptionsMenu();
                         return null;
                     }
                 }, Task.UI_THREAD_EXECUTOR);
@@ -249,6 +241,7 @@ public class CalendarActivity extends AppCompatActivity
                     public Void then(Task<Void> task) throws Exception {
                         onEventsInsert(store.getEvents());
                         Snackbar.make(mCoordinator, "cleaning the events successful", Snackbar.LENGTH_SHORT).show();
+                        invalidateOptionsMenu();
                         return null;
                     }
                 }, Task.UI_THREAD_EXECUTOR);

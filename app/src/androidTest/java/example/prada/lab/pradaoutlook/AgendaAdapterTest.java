@@ -102,7 +102,7 @@ public class AgendaAdapterTest {
         cal.set(Calendar.DAY_OF_MONTH, 1);
         for (int i = 1; i <= NUM_OF_DAYS ; i++) {
             cal.set(Calendar.DAY_OF_YEAR, i);
-            assertEquals(i - 1, mAdapter.findSectionIndex(cal.getTime()));
+            assertEquals(i - 1, mAdapter.getSectionIndex(cal.getTime()));
         }
     }
 

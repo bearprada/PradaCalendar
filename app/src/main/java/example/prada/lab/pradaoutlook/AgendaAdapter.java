@@ -132,13 +132,18 @@ public class AgendaAdapter extends SectioningAdapter {
         notifyAllSectionsDataSetChanged();
     }
 
-    public int findSectionPosition(@NonNull Date date) {
-        return getAdapterPositionForSectionHeader(findSectionIndex(date));
+    public int getSectionPosition(@NonNull Date date) {
+        return getAdapterPositionForSectionHeader(getSectionIndex(date));
     }
 
-    public int findSectionIndex(@NonNull Date date) {
+    private int getSectionIndex(@NonNull Date date) {
         long millSeconds = date.getTime() - mFrom.getTimeInMillis();
-        return (int) Math.floor(millSeconds / MILL_SECONDS_IN_A_DAY);
+        int index =  (int) Math.floor(millSeconds / MILL_SECONDS_IN_A_DAY);
+        if (index >= mNumOfItemOnSectionList.size()) {
+            throw new IndexOutOfBoundsException("the range should be 0 to " +
+                mNumOfItemOnSectionList.size() + ", but it's " + index);
+        }
+        return index;
     }
 
     private void rebuildSectionsMetadata() {
@@ -171,7 +176,7 @@ public class AgendaAdapter extends SectioningAdapter {
         mCursor.moveToFirst();
         do {
             POEvent e = POEvent.createFromCursor(mCursor);
-            int sectionIdx = findSectionIndex(e.getFrom());
+            int sectionIdx = getSectionIndex(e.getFrom());
             int count = mNumOfItemOnSectionList.get(sectionIdx).getValue();
             mNumOfItemOnSectionList.get(sectionIdx).setValue(count + 1);
         } while (mCursor.moveToNext());
@@ -215,8 +220,8 @@ public class AgendaAdapter extends SectioningAdapter {
         if (t1 < 0 || t2 < 0 || t2 <= t1) {
             return;
         }
-        int idx1 = findSectionIndex(new Date(t1));
-        int idx2 = findSectionIndex(new Date(t2));
+        int idx1 = getSectionIndex(new Date(t1));
+        int idx2 = getSectionIndex(new Date(t2));
         int size = mNumOfItemOnSectionList.size();
         for (int i = idx1; i <= idx2 ; i++) {
             if (i < size && i >= 0) {

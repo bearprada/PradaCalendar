@@ -5,11 +5,14 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.graphics.Color;
 import android.support.annotation.ColorInt;
+import android.support.annotation.DrawableRes;
+import android.support.annotation.LayoutRes;
 import android.text.TextUtils;
 
 import java.util.Date;
 import com.github.sundeepk.compactcalendarview.domain.Event;
 
+import example.prada.lab.pradaoutlook.R;
 import example.prada.lab.pradaoutlook.db.OutlookDbHelper;
 
 /**
@@ -18,6 +21,11 @@ import example.prada.lab.pradaoutlook.db.OutlookDbHelper;
  * this data object represent the event's detail
  */
 public class POEvent {
+
+    public static final String LABEL_OOO = "out-of-office";
+    public static final String LABEL_OFFICE = "office";
+    public static final String LABEL_BIRTHDAY = "birthday";
+
     private final String mTitle;
     private final String mLabel;
     private final Date mFrom;
@@ -87,8 +95,29 @@ public class POEvent {
     }
 
     private @ColorInt int getColorRes() {
-        // return Color.parseColor("#FF4081"); // TODO support different color later
-        return Color.parseColor("#00FF00");
+        switch (mLabel == null ? "" : mLabel) {
+            case LABEL_OOO:
+                return Color.parseColor("#AED581");
+            case LABEL_BIRTHDAY:
+                return Color.parseColor("#F06292");
+            case LABEL_OFFICE:
+                return Color.parseColor("#7986CB");
+            default:
+                return Color.parseColor("#666666");
+        }
+    }
+
+    public @DrawableRes int getLabelResourceId() {
+        switch (mLabel == null ? "" : mLabel) {
+            case LABEL_OOO:
+                return R.drawable.label_ooo;
+            case LABEL_BIRTHDAY:
+                return R.drawable.label_birthday;
+            case LABEL_OFFICE:
+                return R.drawable.label_office;
+            default:
+                return R.drawable.label_others;
+        }
     }
 
     /**
