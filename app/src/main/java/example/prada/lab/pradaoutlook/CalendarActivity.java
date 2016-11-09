@@ -23,15 +23,17 @@ import android.view.MenuItem;
 
 import com.github.sundeepk.compactcalendarview.CompactCalendarView;
 import com.karumi.dexter.Dexter;
-import com.karumi.dexter.MultiplePermissionsReport;
 import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionDeniedResponse;
+import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.CompositeMultiplePermissionsListener;
 import com.karumi.dexter.listener.multi.DialogOnAnyDeniedMultiplePermissionsListener;
-import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
+import com.karumi.dexter.listener.single.PermissionListener;
 
 import org.zakariya.stickyheaders.StickyHeaderLayoutManager;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -77,7 +79,9 @@ public class CalendarActivity extends AppCompatActivity
         mCalendarView.setListener(this);
         updateCalenderView(store.getEvents());
 
-        setTitle(getTitleString(mCalendarView.getFirstDayOfCurrentMonth()));
+        Calendar c = Calendar.getInstance();
+        c.setTime(mCalendarView.getFirstDayOfCurrentMonth());
+        setTitle(getTitleString(c));
 
         mAdapter = new AgendaAdapter(this);
         mAgendaView.setAdapter(mAdapter);
@@ -198,9 +202,9 @@ public class CalendarActivity extends AppCompatActivity
         EventStoreFactory.getInstance(this).removeListener(this);
     }
 
-    private String getTitleString(Date date) {
-        int year = date.getYear() + 1900;
-        int month = date.getMonth();
+    private String getTitleString(Calendar calendar) {
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
         return String.format("%s %s", year, Utility.convertMonthStr(month).substring(0, 3));
     }
 
@@ -272,7 +276,9 @@ public class CalendarActivity extends AppCompatActivity
     @Override
     public void onMonthScroll(Date firstDayOfNewMonth) {
         tryMoveAgendaListToDate(firstDayOfNewMonth);
-        setTitle(getTitleString(firstDayOfNewMonth));
+        Calendar c = Calendar.getInstance();
+        c.setTime(firstDayOfNewMonth);
+        setTitle(getTitleString(c));
     }
 
     @Override
