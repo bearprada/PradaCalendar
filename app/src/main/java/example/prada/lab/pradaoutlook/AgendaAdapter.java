@@ -9,17 +9,15 @@ import android.view.ViewGroup;
 
 import org.zakariya.stickyheaders.SectioningAdapter;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
+import example.prada.lab.pradaoutlook.model.POEvent;
 import example.prada.lab.pradaoutlook.store.EventStoreFactory;
 import example.prada.lab.pradaoutlook.store.IEventStore;
-import example.prada.lab.pradaoutlook.model.POEvent;
 import example.prada.lab.pradaoutlook.utils.Utility;
 import example.prada.lab.pradaoutlook.view.DayViewHolder;
 import example.prada.lab.pradaoutlook.view.EventViewHolder;
@@ -44,8 +42,7 @@ public class AgendaAdapter extends SectioningAdapter {
 
     private LruCache<Integer, POEvent> mEventCache = new LruCache<>(256);
 
-    private final List<Map.Entry<Calendar, Integer>> mNumOfItemOnSectionList =
-        Collections.synchronizedList(new ArrayList<Map.Entry<Calendar, Integer>>());
+    private final List<Integer> mNumOfItemOnSectionList = Collections.synchronizedList(new ArrayList<Integer>());
 
     public AgendaAdapter(@NonNull Context ctx) {
         mInflater = LayoutInflater.from(ctx);
@@ -91,8 +88,9 @@ public class AgendaAdapter extends SectioningAdapter {
     public void onBindHeaderViewHolder(HeaderViewHolder viewHolder, int sectionIndex,
                                        int headerUserType) {
         DayViewHolder vh = (DayViewHolder) viewHolder;
-        Calendar cal = mNumOfItemOnSectionList.get(sectionIndex).getKey();
-        vh.bind(cal, mWeatherMgr.fetchWeather(cal.getTimeInMillis()));
+        Calendar c = (Calendar) mFrom.clone();
+        c.add(Calendar.HOUR, 24 * sectionIndex);
+        vh.bind(c, mWeatherMgr.fetchWeather(c.getTimeInMillis()));
     }
 
     @Override
@@ -102,7 +100,7 @@ public class AgendaAdapter extends SectioningAdapter {
 
     @Override
     public int getSectionItemUserType(int sectionIndex, int itemIndex) {
-        if (mNumOfItemOnSectionList.get(sectionIndex).getValue() > 0) {
+        if (mNumOfItemOnSectionList.get(sectionIndex) > 0) {
             return ITEM_TYPE_EVENT;
         } else {
             return ITEM_TYPE_NO_EVENT;
@@ -119,7 +117,7 @@ public class AgendaAdapter extends SectioningAdapter {
         if (sectionIndex >= mNumOfItemOnSectionList.size()) {
             return 0;
         }
-        int numEvents = mNumOfItemOnSectionList.get(sectionIndex).getValue();
+        int numEvents = mNumOfItemOnSectionList.get(sectionIndex);
         return numEvents == 0 ? 1 : numEvents;
     }
 
@@ -139,6 +137,7 @@ public class AgendaAdapter extends SectioningAdapter {
     public int getSectionIndex(@NonNull Date date) {
         long millSeconds = date.getTime() - mFrom.getTimeInMillis();
         int index =  (int) Math.floor(millSeconds / MILL_SECONDS_IN_A_DAY);
+        android.util.Log.d("TEST","getSectionIndex : " + date + " >> ms = " + millSeconds + " >>>> idx " + index);
         if (index >= mNumOfItemOnSectionList.size()) {
             throw new IndexOutOfBoundsException("the range should be 0 to " +
                 mNumOfItemOnSectionList.size() + ", but it's " + index);
@@ -162,29 +161,29 @@ public class AgendaAdapter extends SectioningAdapter {
         POEvent latestEvent = POEvent.createFromCursor(mCursor);
         mFrom.setTime(firstEvent.getFrom());
         mTo.setTime(latestEvent.getTo());
-        mTo.set(Calendar.DAY_OF_YEAR, mTo.get(Calendar.DAY_OF_YEAR) + 1);
+//        mTo.set(Calendar.DAY_OF_YEAR, mTo.get(Calendar.DAY_OF_YEAR) + 1);
         normalizeDate(mFrom);
         normalizeDate(mTo);
-
+        mTo.setTimeInMillis(mTo.getTimeInMillis() + Utility.MILL_SECONDS_A_DAY);
         long days = Utility.getDaysBetween(mFrom, mTo);
         // Initial list
         for (int i = 0; i < days; i++) {
-            Calendar c = (Calendar) mFrom.clone();
-            c.add(Calendar.HOUR, 24 * i);
-            mNumOfItemOnSectionList.add(new AbstractMap.SimpleEntry<>(c, 0));
+            mNumOfItemOnSectionList.add(0);
         }
         mCursor.moveToFirst();
         do {
             POEvent e = POEvent.createFromCursor(mCursor);
             int sectionIdx = getSectionIndex(e.getFrom());
-            int count = mNumOfItemOnSectionList.get(sectionIdx).getValue();
-            mNumOfItemOnSectionList.get(sectionIdx).setValue(count + 1);
+            int count = mNumOfItemOnSectionList.get(sectionIdx);
+            mNumOfItemOnSectionList.set(sectionIdx, count + 1);
         } while (mCursor.moveToNext());
     }
 
     private void normalizeDate(Calendar cal) {
-        long mill = (long) Math.floor(cal.getTimeInMillis() / MILL_SECONDS_IN_A_DAY);
-        cal.setTimeInMillis(mill * MILL_SECONDS_IN_A_DAY);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
     }
 
     // made this method be default method because we want to test it.
@@ -207,11 +206,11 @@ public class AgendaAdapter extends SectioningAdapter {
             return -1;
         }
         int cursorIndex = 0;
-        if (itemIndex < mNumOfItemOnSectionList.get(sectionIndex).getValue()) {
+        if (itemIndex < mNumOfItemOnSectionList.get(sectionIndex)) {
             cursorIndex = itemIndex;
         }
         for (int i = 0; i < sectionIndex ; i++) {
-            cursorIndex += mNumOfItemOnSectionList.get(i).getValue();
+            cursorIndex += mNumOfItemOnSectionList.get(i);
         }
         return cursorIndex;
     }
