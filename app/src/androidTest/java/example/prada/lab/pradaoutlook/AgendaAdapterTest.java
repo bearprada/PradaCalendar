@@ -17,6 +17,7 @@ import static org.junit.Assert.*;
 import example.prada.lab.pradaoutlook.model.POEvent;
 import example.prada.lab.pradaoutlook.store.EventStoreFactory;
 import example.prada.lab.pradaoutlook.store.IEventStore;
+import example.prada.lab.pradaoutlook.utils.Utility;
 
 /**
  * Created by prada on 11/6/16.
@@ -63,8 +64,7 @@ public class AgendaAdapterTest {
     public void testGetNumOfSectionsAndItemsWithEmptySection() {
         Calendar c1 = Calendar.getInstance();
         c1.set(Calendar.YEAR, 2020);
-        c1.set(Calendar.MONTH, 1);
-        c1.set(Calendar.DAY_OF_MONTH, 1);
+        c1.set(Calendar.DAY_OF_YEAR, 1);
 
         POEvent e1 = new POEvent("TestCase1Title", "TestCase1Label", c1.getTime(), c1.getTime());
         Calendar c2 = Calendar.getInstance();
@@ -87,6 +87,23 @@ public class AgendaAdapterTest {
             assertEquals("i = " + i, 1, mAdapter.getNumberOfItemsInSection(i));
             assertEquals("i = " + i, AgendaAdapter.ITEM_TYPE_NO_EVENT, mAdapter.getSectionItemUserType(i, 0));
         }
+    }
+
+    @Test
+    public void testLargeTimeRange() {
+        Calendar c1 = Calendar.getInstance();
+        c1.set(Calendar.YEAR, 1700);
+        c1.set(Calendar.DAY_OF_YEAR, 1);
+
+        List<POEvent> events = new ArrayList<>();
+        events.add(new POEvent("TestCase1Title", "TestCase1Label", c1.getTime(), c1.getTime()));
+        Calendar c2 = Calendar.getInstance();
+        c2.set(Calendar.YEAR, 5000);
+        c2.set(Calendar.DAY_OF_YEAR, 1);
+        events.add(new POEvent("TestCase1Title", "TestCase1Label", c2.getTime(), c2.getTime()));
+        mStore.addEvents(events);
+        mAdapter.updateEvents();
+        assertEquals(Utility.getDaysBetween(c1, c2), mAdapter.getNumberOfSections());
     }
 
     @Test
