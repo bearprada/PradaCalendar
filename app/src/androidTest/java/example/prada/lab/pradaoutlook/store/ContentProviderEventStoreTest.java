@@ -32,7 +32,6 @@ public class ContentProviderEventStoreTest {
     public void createStore() {
         mStore = EventStoreFactory.getInstance(InstrumentationRegistry.getTargetContext());
         mStore.removeAllRecords();
-        // TODO add the data
     }
 
     @After
