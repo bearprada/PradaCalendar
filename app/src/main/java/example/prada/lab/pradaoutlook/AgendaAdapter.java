@@ -136,7 +136,7 @@ public class AgendaAdapter extends SectioningAdapter {
         return getAdapterPositionForSectionHeader(getSectionIndex(date));
     }
 
-    private int getSectionIndex(@NonNull Date date) {
+    public int getSectionIndex(@NonNull Date date) {
         long millSeconds = date.getTime() - mFrom.getTimeInMillis();
         int index =  (int) Math.floor(millSeconds / MILL_SECONDS_IN_A_DAY);
         if (index >= mNumOfItemOnSectionList.size()) {
