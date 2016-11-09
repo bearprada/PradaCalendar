@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Utility.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">example.prada.lab.pradaoutlook.utils</a> &gt; <span class="el_source">Utility.java</span></div><h1>Utility.java</h1><pre class="source lang-java linenums">package example.prada.lab.pradaoutlook.utils;
+
+import android.support.annotation.NonNull;
+
+import java.util.Calendar;
+
+/**
+ * Created by prada on 10/29/16.
+ */
+
+<span class="nc" id="L11">public class Utility {</span>
+
+    public static final long MILL_SECONDS_A_DAY = 24 * 60 * 60 * 1000;
+    public static final long MILL_SECONDS_A_HOUR = 60 * 60 * 1000;
+
+    /**
+     * finding the days between the two calendar objects.
+     * @param cal1 the start point of the duration
+     * @param cal2 the end point of the duration
+     * @return the count of days between the two calendar objects. It will return zero if the input
+     * objects is null, or the calendar objects have wrong order.
+     */
+    public static long getDaysBetween(Calendar cal1, Calendar cal2) {
+<span class="fc bfc" id="L24" title="All 4 branches covered.">        if (cal1 == null || cal2 == null) {</span>
+<span class="fc" id="L25">            return 0;</span>
+        }
+        // normalize the days
+<span class="fc" id="L28">        cal1.set(Calendar.HOUR_OF_DAY, 0);</span>
+<span class="fc" id="L29">        cal2.set(Calendar.HOUR_OF_DAY, 0);</span>
+<span class="fc" id="L30">        long t1 = cal1.getTimeInMillis();</span>
+<span class="fc" id="L31">        long t2 = cal2.getTimeInMillis();</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        if (t1 &gt;= t2) {</span>
+<span class="fc" id="L33">            return 0;</span>
+        }
+<span class="fc" id="L35">        return ((t2 - t1) / MILL_SECONDS_A_DAY);</span>
+    }
+
+    /**
+     * converting the among of mill-seconds into the human readable string. e.g,
+     *      1m : 1 minute
+     *      10h3m : 10 hours and 3 minutes
+     *      1d20m : 1 day and 20 minutes
+     * @param millSeconds the duration(ms) between the two timestamps
+     * @return the translated string for represent duration.
+     */
+    public static @NonNull String getDurationString(long millSeconds) {
+<span class="fc" id="L47">        long seconds = millSeconds / 1000;</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        if (seconds &lt; 60) { // it's less then 1 min.</span>
+<span class="fc" id="L49">            return &quot;&quot;;</span>
+        }
+<span class="fc" id="L51">        int day = (int) Math.floor(seconds / (3600 * 24));</span>
+<span class="fc" id="L52">        int hrs = (int) Math.floor(seconds / 3600) % 24;</span>
+<span class="fc" id="L53">        int min = (int) Math.floor(seconds % 3600) / 60;</span>
+<span class="fc" id="L54">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (day &gt; 0) {</span>
+<span class="fc" id="L56">            sb.append(day).append(&quot;d&quot;);</span>
+        }
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (hrs &gt; 0) {</span>
+<span class="fc" id="L59">            sb.append(hrs).append(&quot;h&quot;);</span>
+        }
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (min &gt; 0) {</span>
+<span class="fc" id="L62">            sb.append(min).append(&quot;m&quot;);</span>
+        }
+<span class="fc" id="L64">        return sb.toString();</span>
+    }
+
+    /**
+     * translating the day integer into the human readable string.
+     * @param day the integer between 1 to 7
+     * @return the translated string of day of a week
+     * @throws IllegalArgumentException the integer of day is out of range [1 - 7]
+     */
+    public static String convertDayStr(int day) {
+<span class="fc bfc" id="L74" title="All 8 branches covered.">        switch(day) {</span>
+            case Calendar.SUNDAY:
+<span class="fc" id="L76">                return &quot;SUNDAY&quot;;</span>
+            case Calendar.MONDAY:
+<span class="fc" id="L78">                return &quot;MONDAY&quot;;</span>
+            case Calendar.TUESDAY:
+<span class="fc" id="L80">                return &quot;TUESDAY&quot;;</span>
+            case Calendar.WEDNESDAY:
+<span class="fc" id="L82">                return &quot;WEDNESDAY&quot;;</span>
+            case Calendar.THURSDAY:
+<span class="fc" id="L84">                return &quot;THURSDAY&quot;;</span>
+            case Calendar.FRIDAY:
+<span class="fc" id="L86">                return &quot;FRIDAY&quot;;</span>
+            case Calendar.SATURDAY:
+<span class="fc" id="L88">                return &quot;SATURDAY&quot;;</span>
+            default:
+<span class="fc" id="L90">                throw new IllegalArgumentException(&quot;the day should be between 1 - 7, but it's &quot; + day);</span>
+        }
+    }
+
+    /**
+     * translating the month integer to the human readable string.
+     * @param month integer between 0 to 11
+     * @return the translated month string
+     * @throws IllegalArgumentException the month parameter is out of range between 0 - 11
+     */
+    public static String convertMonthStr(int month) {
+<span class="fc bfc" id="L101" title="All 13 branches covered.">        switch (month) {</span>
+            case Calendar.JANUARY:
+<span class="fc" id="L103">                return &quot;JANUARY&quot;;</span>
+            case Calendar.FEBRUARY:
+<span class="fc" id="L105">                return &quot;FEBRUARY&quot;;</span>
+            case Calendar.MARCH:
+<span class="fc" id="L107">                return &quot;MARCH&quot;;</span>
+            case Calendar.APRIL:
+<span class="fc" id="L109">                return &quot;APRIL&quot;;</span>
+            case Calendar.MAY:
+<span class="fc" id="L111">                return &quot;MAY&quot;;</span>
+            case Calendar.JUNE:
+<span class="fc" id="L113">                return &quot;JUNE&quot;;</span>
+            case Calendar.JULY:
+<span class="fc" id="L115">                return &quot;JULY&quot;;</span>
+            case Calendar.AUGUST:
+<span class="fc" id="L117">                return &quot;AUGUST&quot;;</span>
+            case Calendar.SEPTEMBER:
+<span class="fc" id="L119">                return &quot;SEPTEMBER&quot;;</span>
+            case Calendar.OCTOBER:
+<span class="fc" id="L121">                return &quot;OCTOBER&quot;;</span>
+            case Calendar.NOVEMBER:
+<span class="fc" id="L123">                return &quot;NOVEMBER&quot;;</span>
+            case Calendar.DECEMBER:
+<span class="fc" id="L125">                return &quot;DECEMBER&quot;;</span>
+            default:
+<span class="fc" id="L127">                throw new IllegalArgumentException(&quot;the month should be between 0 - 11, but it's &quot; + month);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span>Generated by the Android Gradle plugin 2.2.1</div></body></html>

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>EventContentProvider.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">example.prada.lab.pradaoutlook</a> &gt; <span class="el_source">EventContentProvider.java</span></div><h1>EventContentProvider.java</h1><pre class="source lang-java linenums">package example.prada.lab.pradaoutlook;
+
+import android.content.ContentProvider;
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.ContentValues;
+import android.content.UriMatcher;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
+import android.support.annotation.Nullable;
+
+import example.prada.lab.pradaoutlook.db.OutlookDbHelper;
+
+/**
+ * Created by prada on 10/30/16.
+ */
+
+<span class="fc" id="L19">public class EventContentProvider extends ContentProvider {</span>
+    private OutlookDbHelper mDbHelper;
+    private ContentResolver mResolver;
+
+    public static final String AUTHORITY = BuildConfig.APPLICATION_ID;
+<span class="fc" id="L24">    public static final Uri EVENT_URI = Uri.parse(&quot;content://&quot; + AUTHORITY + &quot;/events&quot;);</span>
+
+<span class="fc" id="L26">    private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);</span>
+
+    private static final int EVENT = 1;
+    private static final int EVENT_WITH_ID = 2;
+
+    static {
+<span class="fc" id="L32">        sUriMatcher.addURI(AUTHORITY, &quot;events&quot;, EVENT);</span>
+<span class="fc" id="L33">        sUriMatcher.addURI(AUTHORITY, &quot;events/#&quot;, EVENT_WITH_ID);</span>
+<span class="fc" id="L34">    }</span>
+
+    public static Uri createEventIdUri(long id) {
+<span class="fc" id="L37">        return Uri.parse(&quot;content://&quot; + AUTHORITY + &quot;/events/&quot; + id);</span>
+    }
+
+
+    @Override
+    public boolean onCreate() {
+<span class="fc" id="L43">        mDbHelper = new OutlookDbHelper(getContext());</span>
+<span class="fc" id="L44">        mResolver = getContext().getContentResolver();</span>
+<span class="fc" id="L45">        return true;</span>
+    }
+
+    @Nullable
+    @Override
+    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
+                        String sortOrder) {
+<span class="fc" id="L52">        SQLiteDatabase db = mDbHelper.getReadableDatabase();</span>
+<span class="pc bpc" id="L53" title="1 of 3 branches missed.">        switch (sUriMatcher.match(uri)) {</span>
+            case EVENT:
+<span class="fc" id="L55">                return db.query(OutlookDbHelper.NAME, projection, selection, selectionArgs,</span>
+                                null, null, sortOrder);
+            case EVENT_WITH_ID:
+<span class="fc" id="L58">                long id = ContentUris.parseId(uri);</span>
+<span class="fc" id="L59">                return db.query(OutlookDbHelper.NAME, projection, OutlookDbHelper.EVENT_ID + &quot;=&quot; + id,</span>
+                                null, null, null, sortOrder);
+            default:
+<span class="nc" id="L62">                return null;</span>
+        }
+    }
+
+    @Nullable
+    @Override
+    public String getType(Uri uri) {
+<span class="nc" id="L69">        return null;</span>
+    }
+
+    @Nullable
+    @Override
+    public Uri insert(Uri uri, ContentValues values) {
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        switch (sUriMatcher.match(uri)) {</span>
+            case EVENT:
+<span class="fc" id="L77">                SQLiteDatabase db = mDbHelper.getWritableDatabase();</span>
+<span class="fc" id="L78">                long eventId = db.insert(OutlookDbHelper.NAME, null, values);</span>
+<span class="fc" id="L79">                Uri newUri = ContentUris.withAppendedId(EVENT_URI, eventId);</span>
+<span class="fc" id="L80">                mResolver.notifyChange(newUri, null);</span>
+<span class="fc" id="L81">                return newUri;</span>
+            default:
+<span class="fc" id="L83">                return null;</span>
+        }
+    }
+
+    @Override
+    public int delete(Uri uri, String selection, String[] selectionArgs) {
+<span class="fc" id="L89">        SQLiteDatabase db = mDbHelper.getWritableDatabase();</span>
+<span class="fc" id="L90">        int totalDeletedRow = 0;</span>
+<span class="pc bpc" id="L91" title="1 of 3 branches missed.">        switch (sUriMatcher.match(uri)) {</span>
+            case EVENT:
+                try {
+<span class="fc" id="L94">                    db.beginTransaction();</span>
+<span class="fc" id="L95">                    totalDeletedRow = db.delete(OutlookDbHelper.NAME, selection, selectionArgs);</span>
+<span class="fc" id="L96">                    db.setTransactionSuccessful();</span>
+                    break;
+                } finally {
+<span class="pc" id="L99">                    db.endTransaction();</span>
+<span class="pc" id="L100">                    mResolver.notifyChange(uri, null);</span>
+                }
+            case EVENT_WITH_ID:
+<span class="fc" id="L103">                long id = ContentUris.parseId(uri);</span>
+                try {
+<span class="fc" id="L105">                    db.beginTransaction();</span>
+<span class="fc" id="L106">                    totalDeletedRow = db.delete(OutlookDbHelper.NAME, OutlookDbHelper.EVENT_ID + &quot;=&quot; + id, null);</span>
+<span class="fc" id="L107">                    db.setTransactionSuccessful();</span>
+                    break;
+                } finally {
+<span class="pc" id="L110">                    db.endTransaction();</span>
+<span class="pc" id="L111">                    mResolver.notifyChange(uri, null);</span>
+                }
+        }
+<span class="fc" id="L114">        return totalDeletedRow;</span>
+    }
+
+    @Override
+    public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+<span class="fc bfc" id="L119" title="All 4 branches covered.">        if (values == null || values.size() == 0) {</span>
+<span class="fc" id="L120">            return 0;</span>
+        }
+        // we don't expect the user can modify the event id
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        if (values.containsKey(OutlookDbHelper.EVENT_ID)) {</span>
+<span class="fc" id="L124">            return 0;</span>
+        }
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        switch (sUriMatcher.match(uri)) {</span>
+            case EVENT_WITH_ID:
+<span class="fc" id="L128">                long id = ContentUris.parseId(uri);</span>
+<span class="fc" id="L129">                SQLiteDatabase db = mDbHelper.getWritableDatabase();</span>
+<span class="fc" id="L130">                int changeRows = db.update(OutlookDbHelper.NAME, values,</span>
+                                           OutlookDbHelper.EVENT_ID + &quot;=&quot; + id, selectionArgs);
+<span class="fc" id="L132">                mResolver.notifyChange(uri, null);</span>
+<span class="fc" id="L133">                return changeRows;</span>
+        }
+<span class="fc" id="L135">        return 0;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span>Generated by the Android Gradle plugin 2.2.1</div></body></html>

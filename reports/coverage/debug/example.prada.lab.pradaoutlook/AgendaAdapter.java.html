@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>AgendaAdapter.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">example.prada.lab.pradaoutlook</a> &gt; <span class="el_source">AgendaAdapter.java</span></div><h1>AgendaAdapter.java</h1><pre class="source lang-java linenums">package example.prada.lab.pradaoutlook;
+
+import android.content.Context;
+import android.database.Cursor;
+import android.support.annotation.NonNull;
+import android.support.v4.util.LruCache;
+import android.view.LayoutInflater;
+import android.view.ViewGroup;
+
+import org.zakariya.stickyheaders.SectioningAdapter;
+
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import example.prada.lab.pradaoutlook.store.EventStoreFactory;
+import example.prada.lab.pradaoutlook.store.IEventStore;
+import example.prada.lab.pradaoutlook.model.POEvent;
+import example.prada.lab.pradaoutlook.utils.Utility;
+import example.prada.lab.pradaoutlook.view.DayViewHolder;
+import example.prada.lab.pradaoutlook.view.EventViewHolder;
+import example.prada.lab.pradaoutlook.view.NoEventViewHolder;
+import example.prada.lab.pradaoutlook.weather.WeatherManager;
+
+/**
+ * Created by prada on 10/27/16.
+ */
+public class AgendaAdapter extends SectioningAdapter {
+    private static final int MILL_SECONDS_IN_A_DAY = 24 * 60 * 60 * 1000;
+
+    public static final int ITEM_TYPE_EVENT = 1;
+    public static final int ITEM_TYPE_NO_EVENT = 2;
+
+    private final LayoutInflater mInflater;
+<span class="fc" id="L39">    private final Calendar mFrom = Calendar.getInstance();</span>
+<span class="fc" id="L40">    private final Calendar mTo = Calendar.getInstance();</span>
+    private final IEventStore mStore;
+    private final WeatherManager mWeatherMgr;
+<span class="fc" id="L43">    private Cursor mCursor = null;</span>
+
+<span class="fc" id="L45">    private LruCache&lt;Integer, POEvent&gt; mEventCache = new LruCache&lt;&gt;(256);</span>
+
+<span class="fc" id="L47">    private final List&lt;Map.Entry&lt;Calendar, Integer&gt;&gt; mNumOfItemOnSectionList =</span>
+<span class="fc" id="L48">        Collections.synchronizedList(new ArrayList&lt;Map.Entry&lt;Calendar, Integer&gt;&gt;());</span>
+
+<span class="fc" id="L50">    public AgendaAdapter(@NonNull Context ctx) {</span>
+<span class="fc" id="L51">        mInflater = LayoutInflater.from(ctx);</span>
+<span class="fc" id="L52">        mStore = EventStoreFactory.getInstance(ctx);</span>
+<span class="fc" id="L53">        mCursor = mStore.getEvents();</span>
+<span class="fc" id="L54">        mWeatherMgr = WeatherManager.getInstance(ctx);</span>
+<span class="fc" id="L55">        rebuildSectionsMetadata();</span>
+<span class="fc" id="L56">    }</span>
+
+    @Override
+    public void onBindItemViewHolder(ItemViewHolder viewHolder, int sectionIndex, int itemIndex,
+                                     int itemUserType) {
+<span class="nc bnc" id="L61" title="All 3 branches missed.">        switch (itemUserType) {</span>
+            case ITEM_TYPE_EVENT:
+<span class="nc" id="L63">                ((EventViewHolder) viewHolder).bind(queryEvent(sectionIndex, itemIndex));</span>
+<span class="nc" id="L64">                break;</span>
+            case ITEM_TYPE_NO_EVENT:
+<span class="nc" id="L66">                break; // DO NOTHING</span>
+            default:
+<span class="nc" id="L68">                super.onBindItemViewHolder(viewHolder, sectionIndex, itemIndex, itemUserType);</span>
+                break;
+        }
+<span class="nc" id="L71">    }</span>
+
+    @Override
+    public ItemViewHolder onCreateItemViewHolder(ViewGroup parent, int itemUserType) {
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        switch (itemUserType) {</span>
+            case ITEM_TYPE_NO_EVENT:
+<span class="nc" id="L77">                return new NoEventViewHolder(</span>
+<span class="nc" id="L78">                    mInflater.inflate(R.layout.item_no_event, parent, false));</span>
+            case ITEM_TYPE_EVENT:
+            default:
+<span class="nc" id="L81">                return new EventViewHolder(mInflater.inflate(R.layout.item_event, parent, false));</span>
+        }
+    }
+
+    @Override
+    public HeaderViewHolder onCreateHeaderViewHolder(ViewGroup parent, int headerUserType) {
+<span class="nc" id="L87">        return new DayViewHolder(mInflater.inflate(R.layout.item_day_header, parent, false));</span>
+    }
+
+    @Override
+    public void onBindHeaderViewHolder(HeaderViewHolder viewHolder, int sectionIndex,
+                                       int headerUserType) {
+<span class="nc" id="L93">        DayViewHolder vh = (DayViewHolder) viewHolder;</span>
+<span class="nc" id="L94">        Calendar cal = mNumOfItemOnSectionList.get(sectionIndex).getKey();</span>
+<span class="nc" id="L95">        vh.bind(cal, mWeatherMgr.fetchWeather(cal.getTimeInMillis()));</span>
+<span class="nc" id="L96">    }</span>
+
+    @Override
+    public int getNumberOfSections() {
+<span class="fc" id="L100">        return mNumOfItemOnSectionList.size();</span>
+    }
+
+    @Override
+    public int getSectionItemUserType(int sectionIndex, int itemIndex) {
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        if (mNumOfItemOnSectionList.get(sectionIndex).getValue() &gt; 0) {</span>
+<span class="fc" id="L106">            return ITEM_TYPE_EVENT;</span>
+        } else {
+<span class="fc" id="L108">            return ITEM_TYPE_NO_EVENT;</span>
+        }
+    }
+
+    @Override
+    public boolean doesSectionHaveHeader(int sectionIndex) {
+<span class="fc" id="L114">        return true;</span>
+    }
+
+    @Override
+    public int getNumberOfItemsInSection(int sectionIndex) {
+<span class="fc bfc" id="L119" title="All 2 branches covered.">        if (sectionIndex &gt;= mNumOfItemOnSectionList.size()) {</span>
+<span class="fc" id="L120">            return 0;</span>
+        }
+<span class="fc" id="L122">        int numEvents = mNumOfItemOnSectionList.get(sectionIndex).getValue();</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        return numEvents == 0 ? 1 : numEvents;</span>
+    }
+
+    public void updateEvents() {
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">        if (mCursor != null) {</span>
+<span class="fc" id="L128">            mCursor.close();</span>
+        }
+<span class="fc" id="L130">        mCursor = mStore.getEvents();</span>
+<span class="fc" id="L131">        rebuildSectionsMetadata();</span>
+<span class="fc" id="L132">        notifyAllSectionsDataSetChanged();</span>
+<span class="fc" id="L133">    }</span>
+
+    public int getSectionPosition(@NonNull Date date) {
+<span class="nc" id="L136">        return getAdapterPositionForSectionHeader(getSectionIndex(date));</span>
+    }
+
+    public int getSectionIndex(@NonNull Date date) {
+<span class="fc" id="L140">        long millSeconds = date.getTime() - mFrom.getTimeInMillis();</span>
+<span class="fc" id="L141">        int index =  (int) Math.floor(millSeconds / MILL_SECONDS_IN_A_DAY);</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">        if (index &gt;= mNumOfItemOnSectionList.size()) {</span>
+<span class="nc" id="L143">            throw new IndexOutOfBoundsException(&quot;the range should be 0 to &quot; +</span>
+<span class="nc" id="L144">                mNumOfItemOnSectionList.size() + &quot;, but it's &quot; + index);</span>
+        }
+<span class="fc" id="L146">        return index;</span>
+    }
+
+    private void rebuildSectionsMetadata() {
+<span class="fc" id="L150">        mEventCache.evictAll();</span>
+<span class="fc" id="L151">        mNumOfItemOnSectionList.clear();</span>
+
+<span class="fc bfc" id="L153" title="All 2 branches covered.">        if (mCursor.getCount() &lt;= 0) {</span>
+<span class="fc" id="L154">            Date date = new Date();</span>
+<span class="fc" id="L155">            mFrom.setTime(date);</span>
+<span class="fc" id="L156">            mTo.setTime(date);</span>
+<span class="fc" id="L157">            return;</span>
+        }
+<span class="fc" id="L159">        mCursor.moveToFirst();</span>
+<span class="fc" id="L160">        POEvent firstEvent = POEvent.createFromCursor(mCursor);</span>
+<span class="fc" id="L161">        mCursor.moveToLast();</span>
+<span class="fc" id="L162">        POEvent latestEvent = POEvent.createFromCursor(mCursor);</span>
+<span class="fc" id="L163">        mFrom.setTime(firstEvent.getFrom());</span>
+<span class="fc" id="L164">        mTo.setTime(latestEvent.getTo());</span>
+<span class="fc" id="L165">        mTo.set(Calendar.DAY_OF_YEAR, mTo.get(Calendar.DAY_OF_YEAR) + 1);</span>
+<span class="fc" id="L166">        normalizeDate(mFrom);</span>
+<span class="fc" id="L167">        normalizeDate(mTo);</span>
+
+<span class="fc" id="L169">        long days = Utility.getDaysBetween(mFrom, mTo);</span>
+        // Initial list
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        for (int i = 0; i &lt; days; i++) {</span>
+<span class="fc" id="L172">            Calendar c = (Calendar) mFrom.clone();</span>
+<span class="fc" id="L173">            c.add(Calendar.HOUR, 24 * i);</span>
+<span class="fc" id="L174">            mNumOfItemOnSectionList.add(new AbstractMap.SimpleEntry&lt;&gt;(c, 0));</span>
+        }
+<span class="fc" id="L176">        mCursor.moveToFirst();</span>
+        do {
+<span class="fc" id="L178">            POEvent e = POEvent.createFromCursor(mCursor);</span>
+<span class="fc" id="L179">            int sectionIdx = getSectionIndex(e.getFrom());</span>
+<span class="fc" id="L180">            int count = mNumOfItemOnSectionList.get(sectionIdx).getValue();</span>
+<span class="fc" id="L181">            mNumOfItemOnSectionList.get(sectionIdx).setValue(count + 1);</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        } while (mCursor.moveToNext());</span>
+<span class="fc" id="L183">    }</span>
+
+    private void normalizeDate(Calendar cal) {
+<span class="fc" id="L186">        long mill = (long) Math.floor(cal.getTimeInMillis() / MILL_SECONDS_IN_A_DAY);</span>
+<span class="fc" id="L187">        cal.setTimeInMillis(mill * MILL_SECONDS_IN_A_DAY);</span>
+<span class="fc" id="L188">    }</span>
+
+    // made this method be default method because we want to test it.
+    POEvent queryEvent(int sectionIndex, int itemIndex) {
+<span class="fc" id="L192">        int cursorIndex = getCursorIndex(sectionIndex, itemIndex);</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">        if (cursorIndex &lt; 0) {</span>
+<span class="fc" id="L194">            return null;</span>
+        }
+<span class="fc bfc" id="L196" title="All 2 branches covered.">        if (mEventCache.get(cursorIndex) != null) {</span>
+<span class="fc" id="L197">            return mEventCache.get(cursorIndex);</span>
+        }
+<span class="fc" id="L199">        mCursor.moveToPosition(cursorIndex);</span>
+<span class="fc" id="L200">        POEvent event = POEvent.createFromCursor(mCursor);</span>
+<span class="fc" id="L201">        mEventCache.put(cursorIndex, event);</span>
+<span class="fc" id="L202">        return event;</span>
+    }
+
+    private int getCursorIndex(int sectionIndex, int itemIndex) {
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        if (sectionIndex &gt;= mNumOfItemOnSectionList.size()) {</span>
+<span class="fc" id="L207">            return -1;</span>
+        }
+<span class="fc" id="L209">        int cursorIndex = 0;</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">        if (itemIndex &lt; mNumOfItemOnSectionList.get(sectionIndex).getValue()) {</span>
+<span class="fc" id="L211">            cursorIndex = itemIndex;</span>
+        }
+<span class="fc bfc" id="L213" title="All 2 branches covered.">        for (int i = 0; i &lt; sectionIndex ; i++) {</span>
+<span class="fc" id="L214">            cursorIndex += mNumOfItemOnSectionList.get(i).getValue();</span>
+        }
+<span class="fc" id="L216">        return cursorIndex;</span>
+    }
+
+    public void updateSections(long t1, long t2) {
+<span class="nc bnc" id="L220" title="All 6 branches missed.">        if (t1 &lt; 0 || t2 &lt; 0 || t2 &lt;= t1) {</span>
+<span class="nc" id="L221">            return;</span>
+        }
+<span class="nc" id="L223">        int idx1 = getSectionIndex(new Date(t1));</span>
+<span class="nc" id="L224">        int idx2 = getSectionIndex(new Date(t2));</span>
+<span class="nc" id="L225">        int size = mNumOfItemOnSectionList.size();</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        for (int i = idx1; i &lt;= idx2 ; i++) {</span>
+<span class="nc bnc" id="L227" title="All 4 branches missed.">            if (i &lt; size &amp;&amp; i &gt;= 0) {</span>
+<span class="nc" id="L228">                notifyItemChanged(getAdapterPositionForSectionHeader(i));</span>
+            }
+        }
+<span class="nc" id="L231">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span>Generated by the Android Gradle plugin 2.2.1</div></body></html>

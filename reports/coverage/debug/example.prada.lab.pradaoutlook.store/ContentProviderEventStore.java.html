@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>ContentProviderEventStore.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">example.prada.lab.pradaoutlook.store</a> &gt; <span class="el_source">ContentProviderEventStore.java</span></div><h1>ContentProviderEventStore.java</h1><pre class="source lang-java linenums">package example.prada.lab.pradaoutlook.store;
+
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
+
+import com.getbase.android.db.provider.ProviderAction;
+
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.concurrent.Callable;
+
+import bolts.Task;
+import example.prada.lab.pradaoutlook.EventContentProvider;
+import example.prada.lab.pradaoutlook.db.OutlookDbHelper;
+import example.prada.lab.pradaoutlook.model.IEventDataUpdatedListener;
+import example.prada.lab.pradaoutlook.model.POEvent;
+
+/**
+ * Created by prada on 10/31/16.
+ */
+
+public class ContentProviderEventStore extends BaseEventStore {
+
+    private final ContentResolver mResolver;
+
+    private static ContentProviderEventStore sStore;
+
+    static ContentProviderEventStore getInstance(Context ctx) {
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        if (sStore == null) {</span>
+<span class="fc" id="L33">            sStore = new ContentProviderEventStore(ctx);</span>
+        }
+<span class="fc" id="L35">        return sStore;</span>
+    }
+
+<span class="fc" id="L38">    private ContentProviderEventStore(Context ctx) {</span>
+<span class="fc" id="L39">        mResolver = ctx.getContentResolver();</span>
+<span class="fc" id="L40">    }</span>
+
+    @Override
+    public Cursor getEvents() {
+<span class="fc" id="L44">        return ProviderAction</span>
+<span class="fc" id="L45">            .query(EventContentProvider.EVENT_URI)</span>
+<span class="fc" id="L46">            .projection(OutlookDbHelper.EVENT_ID,</span>
+                        OutlookDbHelper.EVENT_TITLE,
+                        OutlookDbHelper.EVENT_LABEL,
+                        OutlookDbHelper.EVENT_START_TIME,
+                        OutlookDbHelper.EVENT_END_TIME)
+<span class="fc" id="L51">            .orderBy(OutlookDbHelper.EVENT_START_TIME + &quot; ASC&quot;)</span>
+<span class="fc" id="L52">            .perform(mResolver);</span>
+    }
+
+    @Override
+    public int countEvents() {
+<span class="fc" id="L57">        return ProviderAction.query(EventContentProvider.EVENT_URI)</span>
+<span class="fc" id="L58">                             .projection(OutlookDbHelper.EVENT_ID)</span>
+<span class="fc" id="L59">                             .perform(mResolver)</span>
+<span class="fc" id="L60">                             .getCount();</span>
+    }
+
+    @Override
+    public int countEvents(long t1, long t2) {
+<span class="fc bfc" id="L65" title="All 4 branches covered.">        if (t1 &lt; 0 || t2 &lt; 0) {</span>
+<span class="fc" id="L66">            throw new IllegalArgumentException(&quot;the timestamp should be the positive value, but t1 = &quot; + t1 + &quot;, t2 = &quot; + t2);</span>
+        }
+<span class="fc" id="L68">        return ProviderAction.query(EventContentProvider.EVENT_URI)</span>
+<span class="fc" id="L69">                             .projection(OutlookDbHelper.EVENT_ID)</span>
+<span class="fc" id="L70">                             .where(OutlookDbHelper.EVENT_START_TIME + &quot; &gt;= &quot; + t1 + &quot; AND &quot;+</span>
+                                    OutlookDbHelper.EVENT_START_TIME + &quot; &lt;= &quot; + t2)
+<span class="fc" id="L72">                             .perform(mResolver)</span>
+<span class="fc" id="L73">                             .getCount();</span>
+    }
+
+    @Override
+    public Calendar getFirstEventTime() throws NullPointerException {
+<span class="fc" id="L78">        Cursor cursor = ProviderAction.query(EventContentProvider.EVENT_URI)</span>
+<span class="fc" id="L79">                                            .orderBy(OutlookDbHelper.EVENT_START_TIME + &quot; ASC&quot;)</span>
+<span class="fc" id="L80">                                            .perform(mResolver);</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (cursor.getCount() &lt;= 0) {</span>
+<span class="fc" id="L82">            throw new IllegalStateException(&quot;it can't find any record&quot;);</span>
+        }
+<span class="fc" id="L84">        cursor.moveToFirst();</span>
+<span class="fc" id="L85">        POEvent e = POEvent.createFromCursor(cursor);</span>
+<span class="fc" id="L86">        Calendar cal = Calendar.getInstance();</span>
+<span class="fc" id="L87">        cal.setTime(e.getFrom());</span>
+<span class="fc" id="L88">        return cal;</span>
+    }
+
+    @Override
+    public Calendar getLatestEventTime() {
+<span class="fc" id="L93">        Cursor cursor = ProviderAction.query(EventContentProvider.EVENT_URI)</span>
+<span class="fc" id="L94">                                      .orderBy(OutlookDbHelper.EVENT_END_TIME + &quot; DESC&quot;)</span>
+<span class="fc" id="L95">                                      .perform(mResolver);</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        if (cursor.getCount() &lt;= 0) {</span>
+<span class="fc" id="L97">            throw new IllegalStateException(&quot;it can't find any record&quot;);</span>
+        }
+<span class="fc" id="L99">        cursor.moveToFirst();</span>
+<span class="fc" id="L100">        POEvent e = POEvent.createFromCursor(cursor);</span>
+<span class="fc" id="L101">        Calendar cal = Calendar.getInstance();</span>
+<span class="fc" id="L102">        cal.setTime(e.getTo());</span>
+<span class="fc" id="L103">        return cal;</span>
+    }
+
+    private Uri insertEvent(POEvent event) {
+<span class="fc" id="L107">        return ProviderAction.insert(EventContentProvider.EVENT_URI)</span>
+<span class="fc" id="L108">                      .values(event.getContentValues())</span>
+<span class="fc" id="L109">                      .perform(mResolver);</span>
+    }
+
+    @Override
+    public void addEvents(final Collection&lt;POEvent&gt; events) {
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (events == null) {</span>
+<span class="fc" id="L115">            throw new NullPointerException(&quot;the events list should be null&quot;);</span>
+        }
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        for (POEvent event : events) {</span>
+<span class="fc" id="L118">            Uri uri = insertEvent(event);</span>
+<span class="fc" id="L119">            long id = ContentUris.parseId(uri);</span>
+<span class="fc" id="L120">            event.setId(id);</span>
+<span class="fc" id="L121">        }</span>
+<span class="fc" id="L122">        Task.call(new Callable&lt;Void&gt;() {</span>
+            @Override
+            public Void call() throws Exception {
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">                for (IEventDataUpdatedListener l : mListeners) {</span>
+<span class="nc" id="L126">                    l.onEventsInsert(getEvents());</span>
+<span class="nc" id="L127">                }</span>
+<span class="fc" id="L128">                return null;</span>
+            }
+        }, Task.UI_THREAD_EXECUTOR);
+<span class="fc" id="L131">    }</span>
+
+    @Override
+    public void removeAllRecords() {
+<span class="fc" id="L135">        int count = ProviderAction.delete(EventContentProvider.EVENT_URI)</span>
+<span class="fc" id="L136">                                      .where(&quot;1&quot;)</span>
+<span class="fc" id="L137">                                      .perform(mResolver);</span>
+<span class="fc" id="L138">        System.out.println(&quot;it has deleted &quot; + count + &quot; rows&quot;);</span>
+<span class="fc" id="L139">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span>Generated by the Android Gradle plugin 2.2.1</div></body></html>
