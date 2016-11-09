@@ -118,6 +118,9 @@ public class CalendarActivity extends AppCompatActivity
         }
 
         Location location = locationManager.getLastKnownLocation(provider);
+        if (location == null) {
+            return Task.forError(new IllegalStateException("we get the empty result from LocationManager.getLastKnownLocation()"));
+        }
         return WeatherManager.getInstance(CalendarActivity.this)
                       .queryWeather(location.getLatitude(), location.getLongitude())
                       .continueWith(new Continuation<WeatherResponse, Void>() {
