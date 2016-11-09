@@ -17,10 +17,10 @@ public class DataGenerator {
         List<POEvent> events = new ArrayList<>();
         for (int i = 1; i <= num; i++) {
             Calendar c1 = Calendar.getInstance();
-            c1.set(Calendar.YEAR, 2000);
+            c1.setTimeInMillis(946684800000L); // 2000/1/1
             c1.set(Calendar.MONTH, i);
             Calendar c2 = Calendar.getInstance();
-            c2.set(Calendar.YEAR, 2000);
+            c2.setTimeInMillis(946684800000L); // 2000/1/1
             c2.set(Calendar.MONTH, i + 1);
             POEvent event = new POEvent("Event" + i, "Label" + i, c1.getTime(), c2.getTime());
             events.add(event);
@@ -31,9 +31,7 @@ public class DataGenerator {
     public static List<POEvent> createEventList(int startDay, int endDay) {
 
         Calendar baseDate = Calendar.getInstance();
-        baseDate.set(Calendar.YEAR, 2020);
-        baseDate.set(Calendar.MONTH, 1);
-        baseDate.set(Calendar.DAY_OF_MONTH, 1);
+        baseDate.setTimeInMillis(1577836800000L); // 2020/1/1
 
         List<POEvent> events = new ArrayList<>();
         for (int i = startDay; i <= endDay ; i++) {
