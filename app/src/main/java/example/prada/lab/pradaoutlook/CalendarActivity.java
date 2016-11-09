@@ -56,6 +56,8 @@ public class CalendarActivity extends AppCompatActivity
     private RecyclerView mAgendaView;
     private CoordinatorLayout mCoordinator;
 
+    final SamplePermissionListener permissionListener = new SamplePermissionListener();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,22 +84,25 @@ public class CalendarActivity extends AppCompatActivity
 
         tryMoveAgendaListToDate(new Date());
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED) {
-            CompositeMultiplePermissionsListener listener = new CompositeMultiplePermissionsListener(
-                DialogOnAnyDeniedMultiplePermissionsListener.Builder
-                    .withContext(this)
-                    .withTitle(R.string.permission_rationale_title)
-                    .withMessage(R.string.permission_rationale_message)
-                    .withButtonText(android.R.string.ok)
-                    .withIcon(R.drawable.ic_launcher)
-                    .build(),
-                new SampleMultiplePermissionListener());
+        Dexter.continuePendingRequestIfPossible(permissionListener);
 
-            Dexter.checkPermissions(listener, Manifest.permission.ACCESS_FINE_LOCATION);
-        } else {
-            queryWeatherWithCurrentLocation();
-        }
+        Task.callInBackground(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                if (ActivityCompat.checkSelfPermission(CalendarActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                    Dexter.checkPermissionOnSameThread(permissionListener, Manifest.permission.ACCESS_FINE_LOCATION);
+                    return false;
+                }
+                return true;
+            }
+        }).continueWith(new Continuation<Boolean, Void>() {
+            @Override
+            public Void then(Task<Boolean> task) throws Exception {
+                queryWeatherWithCurrentLocation();
+                return null;
+            }
+        }, Task.UI_THREAD_EXECUTOR);
     }
 
     // collect the location information
@@ -142,16 +147,19 @@ public class CalendarActivity extends AppCompatActivity
                       }, Task.UI_THREAD_EXECUTOR);
     }
 
-    private class SampleMultiplePermissionListener implements MultiplePermissionsListener {
-
-        @Override public void onPermissionsChecked(MultiplePermissionsReport report) {
-            if (report.areAllPermissionsGranted()) {
-                queryWeatherWithCurrentLocation();
-            }
+    private class SamplePermissionListener implements PermissionListener {
+        @Override
+        public void onPermissionGranted(PermissionGrantedResponse response) {
+            queryWeatherWithCurrentLocation();
         }
 
-        @Override public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions,
-                                                                 final PermissionToken token) {
+        @Override
+        public void onPermissionDenied(PermissionDeniedResponse response) {
+        }
+
+        @Override
+        public void onPermissionRationaleShouldBeShown(PermissionRequest permission,
+                                                       final PermissionToken token) {
             new AlertDialog.Builder(CalendarActivity.this)
                 .setTitle(R.string.permission_rationale_title)
                 .setMessage(R.string.permission_rationale_message)
