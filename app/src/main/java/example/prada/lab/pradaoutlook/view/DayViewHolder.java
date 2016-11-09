@@ -43,11 +43,11 @@ public class DayViewHolder extends SectioningAdapter.HeaderViewHolder{
             @Override
             public Void then(Task<WeatherItem> task) throws Exception {
                 WeatherItem weather = task.getResult();
-                mTxtTemperature.setVisibility(View.VISIBLE);
-                mWeatherIcon.setVisibility(View.VISIBLE);
                 String tempStr = itemView.getContext().getString(R.string.temperature_text, (int) weather.temperatureMin);
                 mTxtTemperature.setText(tempStr);
                 mWeatherIcon.setImageResource(WeatherManager.getIcon(weather.icon));
+                mTxtTemperature.setVisibility(View.VISIBLE);
+                mWeatherIcon.setVisibility(View.VISIBLE);
                 return null;
             }
         }, Task.UI_THREAD_EXECUTOR);
