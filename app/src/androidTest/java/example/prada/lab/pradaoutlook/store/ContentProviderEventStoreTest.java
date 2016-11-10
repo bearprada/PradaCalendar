@@ -15,8 +15,10 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import example.prada.lab.pradaoutlook.DataGenerator;
+import example.prada.lab.pradaoutlook.model.IEventDataUpdatedListener;
 import example.prada.lab.pradaoutlook.model.POEvent;
 
 /**
@@ -185,12 +187,11 @@ public class ContentProviderEventStoreTest {
         }
     }
 
-    @Test
-    public void testListenerWithEmptyList() {
-        // TODO
-    }
-    @Test
+    @Test()
     public void testListenerOperation() {
+        // FIXME because the android testing framework has test shading by default, so the test case
+        // with asynchronous operation will effect another testcase. so I just leave this test first.
+        //
 //        final int NUM = 10;
 //        final CountDownLatch lock = new CountDownLatch(1);
 //        IEventDataUpdatedListener listener = new IEventDataUpdatedListener() {
@@ -202,14 +203,12 @@ public class ContentProviderEventStoreTest {
 //            }
 //        };
 //        mStore.addListener(listener);
-//        List<POEvent> events = createEventList(NUM);
+//        List<POEvent> events = DataGenerator.createEventList(NUM);
 //        mStore.addEvents(events);
-//        synchronized (lock) {
-//            try {
-//                lock.await();
-//            } catch (InterruptedException e) {
-//                fail(e.getMessage());
-//            }
+//        try {
+//            lock.await();
+//        } catch (InterruptedException e) {
+//            fail(e.getMessage());
 //        }
 //        mStore.removeListener(listener);
     }

@@ -6,7 +6,6 @@ import android.database.DatabaseUtils;
 import android.graphics.Color;
 import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
-import android.support.annotation.LayoutRes;
 import android.text.TextUtils;
 
 import java.util.Date;
@@ -91,10 +90,10 @@ public class POEvent {
     }
 
     public Event toEvent() {
-        return new Event(getColorRes(), getFrom().getTime(), this);
+        return new Event(getColor(), getFrom().getTime(), this);
     }
 
-    private @ColorInt int getColorRes() {
+    public @ColorInt int getColor() {
         switch (mLabel == null ? "" : mLabel) {
             case LABEL_OOO:
                 return Color.parseColor("#AED581");

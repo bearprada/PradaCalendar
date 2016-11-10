@@ -96,11 +96,11 @@ public class AgendaAdapterTest {
         c1.set(Calendar.DAY_OF_YEAR, 1);
 
         List<POEvent> events = new ArrayList<>();
-        events.add(new POEvent("TestCase1Title", "TestCase1Label", c1.getTime(), c1.getTime()));
+        events.add(new POEvent("TestCase2Title", "TestCase2Label", c1.getTime(), c1.getTime()));
         Calendar c2 = Calendar.getInstance();
         c2.set(Calendar.YEAR, 5000);
         c2.set(Calendar.DAY_OF_YEAR, 1);
-        events.add(new POEvent("TestCase1Title", "TestCase1Label", c2.getTime(), c2.getTime()));
+        events.add(new POEvent("TestCase2Title", "TestCase2Label", c2.getTime(), c2.getTime()));
         mStore.addEvents(events);
         mAdapter.updateEvents();
         assertEquals(Utility.getDaysBetween(c1, c2) + 1, mAdapter.getNumberOfSections());
@@ -119,7 +119,7 @@ public class AgendaAdapterTest {
         cal.set(Calendar.DAY_OF_MONTH, 1);
         for (int i = 1; i <= NUM_OF_DAYS ; i++) {
             cal.set(Calendar.DAY_OF_YEAR, i);
-            assertEquals(i - 1, mAdapter.getSectionIndex(cal.getTime()));
+            assertEquals(i - 1, mAdapter.getSectionIndex(cal.getTimeInMillis()));
         }
     }
 
@@ -144,4 +144,41 @@ public class AgendaAdapterTest {
         assertNull(mAdapter.queryEvent(Integer.MAX_VALUE, Integer.MAX_VALUE));
     }
 
+    @Test
+    public void testUpdateSections() {
+        int NUM_OF_DAYS = 10;
+        List<POEvent> events = DataGenerator.createEventList(1, NUM_OF_DAYS);
+        mStore.addEvents(events);
+        mAdapter.updateEvents();
+        for (int i = 0; i < events.size() - 1; i++) {
+            assertTrue(mAdapter.updateSections(events.get(i).getFrom().getTime(),
+                                               events.get(i + 1).getFrom().getTime()));
+        }
+        assertTrue(mAdapter.updateSections(events.get(0).getFrom().getTime(),
+                                           events.get(events.size() - 1).getFrom().getTime()));
+    }
+
+    @Test
+    public void testUpdateSectionsWithWrongParameters() {
+
+        // testing with the empty store
+        assertFalse(mAdapter.updateSections(0, 0));
+        assertFalse(mAdapter.updateSections(Integer.MIN_VALUE, 0));
+        assertFalse(mAdapter.updateSections(0, Integer.MIN_VALUE));
+        assertFalse(mAdapter.updateSections(Integer.MIN_VALUE, Integer.MIN_VALUE));
+        assertFalse(mAdapter.updateSections(0, System.currentTimeMillis()));
+        assertFalse(mAdapter.updateSections(System.currentTimeMillis(), 0));
+
+
+        int NUM_OF_DAYS = 10;
+        List<POEvent> events = DataGenerator.createEventList(1, NUM_OF_DAYS);
+        mStore.addEvents(events);
+        mAdapter.updateEvents();
+        // testing with the mock data
+        assertFalse(mAdapter.updateSections(0, 0));
+        assertFalse(mAdapter.updateSections(Integer.MIN_VALUE, 0));
+        assertFalse(mAdapter.updateSections(0, Integer.MIN_VALUE));
+        assertFalse(mAdapter.updateSections(Integer.MIN_VALUE, Integer.MIN_VALUE));
+        assertFalse(mAdapter.updateSections(events.get(9).getFrom().getTime(), events.get(0).getFrom().getTime()));
+    }
 }

@@ -131,12 +131,12 @@ public class AgendaAdapter extends SectioningAdapter {
     }
 
     public int getSectionPosition(@NonNull Date date) {
-        return getAdapterPositionForSectionHeader(getSectionIndex(date));
+        return getAdapterPositionForSectionHeader(getSectionIndex(date.getTime()));
     }
 
-    public int getSectionIndex(@NonNull Date date) {
-        long millSeconds = date.getTime() - mFrom.getTimeInMillis();
-        int index =  (int) Math.floor(millSeconds / MILL_SECONDS_IN_A_DAY);
+    public int getSectionIndex(long millSeconds) {
+        long diffMillSeconds = millSeconds - mFrom.getTimeInMillis();
+        int index =  (int) Math.floor(diffMillSeconds / MILL_SECONDS_IN_A_DAY);
         if (index >= mTotalSections.get()) {
             throw new IndexOutOfBoundsException("the range should be 0 to " +
                 mTotalSections + ", but it's " + index);
@@ -168,7 +168,7 @@ public class AgendaAdapter extends SectioningAdapter {
         mCursor.moveToFirst();
         do {
             POEvent e = POEvent.createFromCursor(mCursor);
-            int sectionIdx = getSectionIndex(e.getFrom());
+            int sectionIdx = getSectionIndex(e.getFrom().getTime());
             int count = mNumOfItemOnSectionList.get(sectionIdx);
             if (count == 0) {
                 mNumOfItemOnSectionList.put(sectionIdx, 1);
@@ -219,17 +219,24 @@ public class AgendaAdapter extends SectioningAdapter {
         return cursorIndex;
     }
 
-    public void updateSections(long t1, long t2) {
+    public boolean updateSections(long t1, long t2) {
         if (t1 < 0 || t2 < 0 || t2 <= t1) {
-            return;
+            return false;
         }
-        int idx1 = getSectionIndex(new Date(t1));
-        int idx2 = getSectionIndex(new Date(t2));
-        int size = mNumOfItemOnSectionList.size();
-        for (int i = idx1; i <= idx2 ; i++) {
-            if (i < size && i >= 0) {
-                notifyItemChanged(getAdapterPositionForSectionHeader(i));
+        try {
+            int idx1 = getSectionIndex(t1);
+            int idx2 = getSectionIndex(t2);
+            int size = mNumOfItemOnSectionList.size();
+            boolean hasChanged = false;
+            for (int i = idx1; i <= idx2; i++) {
+                if (i < size && i >= 0) {
+                    notifyItemChanged(getAdapterPositionForSectionHeader(i));
+                    hasChanged = true;
+                }
             }
+            return hasChanged;
+        } catch (IndexOutOfBoundsException e) {
+            return false;
         }
     }
 }

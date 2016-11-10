@@ -11,8 +11,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
 
+import java.util.Calendar;
 import java.util.Date;
 
+import example.prada.lab.pradaoutlook.R;
 import example.prada.lab.pradaoutlook.db.OutlookDbHelper;
 
 /**
@@ -161,10 +163,10 @@ public class POEventTest {
     @Test
     public void testHashCodeImpl() {
         Date d1 = new Date();
-        d1.setYear(2000);
+        d1.setYear(100);
         d1.setMonth(1);
         Date d2 = new Date();
-        d2.setYear(2000);
+        d2.setYear(100);
         d2.setMonth(2);
         String title = "Testcase5Event";
         String label = "Testcase5Label";
@@ -187,6 +189,49 @@ public class POEventTest {
         d4.setHours(d4.getHours() + 1);
         POEvent e6 = new POEvent(title, label, d1, d4);
         assertNotEquals(e1.hashCode(), e6.hashCode());
+    }
+
+    @Test
+    public void testColorRes() {
+        Calendar cal1 = Calendar.getInstance();
+        cal1.set(Calendar.YEAR, 2000);
+        cal1.set(Calendar.DAY_OF_YEAR, 1);
+
+        Calendar cal2 = Calendar.getInstance();
+        cal2.set(Calendar.YEAR, 2000);
+        cal2.set(Calendar.DAY_OF_YEAR, 2);
+        String title = "Testcase6Event";
+
+        verifyColor(new POEvent(title, POEvent.LABEL_OFFICE, cal1.getTime(), cal2.getTime()).getColor());
+        verifyColor(new POEvent(title, POEvent.LABEL_BIRTHDAY, cal1.getTime(), cal2.getTime()).getColor());
+        verifyColor(new POEvent(title, POEvent.LABEL_OOO, cal1.getTime(), cal2.getTime()).getColor());
+        verifyColor(new POEvent(title, "xxxLabel", cal1.getTime(), cal2.getTime()).getColor());
+        verifyColor(new POEvent(title, " ", cal1.getTime(), cal2.getTime()).getColor());
+    }
+
+    @Test
+    public void testGetLabelResourceId() {
+        Calendar cal1 = Calendar.getInstance();
+        cal1.set(Calendar.YEAR, 3000);
+        cal1.set(Calendar.DAY_OF_YEAR, 1);
+
+        Calendar cal2 = Calendar.getInstance();
+        cal2.set(Calendar.YEAR, 3000);
+        cal2.set(Calendar.DAY_OF_YEAR, 2);
+        String title = "Testcase7Event";
+
+        assertEquals(R.drawable.label_office, new POEvent(title, POEvent.LABEL_OFFICE, cal1.getTime(), cal2.getTime()).getLabelResourceId());
+        assertEquals(R.drawable.label_birthday, new POEvent(title, POEvent.LABEL_BIRTHDAY, cal1.getTime(), cal2.getTime()).getLabelResourceId());
+        assertEquals(R.drawable.label_ooo, new POEvent(title, POEvent.LABEL_OOO, cal1.getTime(), cal2.getTime()).getLabelResourceId());
+        assertEquals(R.drawable.label_others, new POEvent(title, "xxxLabel", cal1.getTime(), cal2.getTime()).getLabelResourceId());
+        assertEquals(R.drawable.label_others, new POEvent(title, " ", cal1.getTime(), cal2.getTime()).getLabelResourceId());
+    }
+
+    private void verifyColor(int color) {
+        assertEquals(255, Color.alpha(color));
+        assertTrue(0 <= Color.red(color) && 255 >= Color.red(color));
+        assertTrue(0 <= Color.green(color) && 255 >= Color.green(color));
+        assertTrue(0 <= Color.blue(color) && 255 >= Color.blue(color));
     }
 
     private void createIllegalEvent(String title, String label, Date d1, Date d2) {
