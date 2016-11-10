@@ -23,15 +23,17 @@ import android.view.MenuItem;
 
 import com.github.sundeepk.compactcalendarview.CompactCalendarView;
 import com.karumi.dexter.Dexter;
-import com.karumi.dexter.MultiplePermissionsReport;
 import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionDeniedResponse;
+import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.CompositeMultiplePermissionsListener;
 import com.karumi.dexter.listener.multi.DialogOnAnyDeniedMultiplePermissionsListener;
-import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
+import com.karumi.dexter.listener.single.PermissionListener;
 
 import org.zakariya.stickyheaders.StickyHeaderLayoutManager;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -48,7 +50,7 @@ import example.prada.lab.pradaoutlook.utils.MockEventsGenerator;
 import example.prada.lab.pradaoutlook.utils.Utility;
 import example.prada.lab.pradaoutlook.weather.WeatherManager;
 
-<span class="nc" id="L51">public class CalendarActivity extends AppCompatActivity</span>
+<span class="nc" id="L53">public class CalendarActivity extends AppCompatActivity</span>
     implements CompactCalendarView.CompactCalendarViewListener, IEventDataUpdatedListener {
 
     private AgendaAdapter mAdapter;
@@ -56,232 +58,244 @@ import example.prada.lab.pradaoutlook.weather.WeatherManager;
     private RecyclerView mAgendaView;
     private CoordinatorLayout mCoordinator;
 
+<span class="nc" id="L61">    final SamplePermissionListener permissionListener = new SamplePermissionListener();</span>
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-<span class="nc" id="L61">        super.onCreate(savedInstanceState);</span>
-<span class="nc" id="L62">        setContentView(R.layout.activity_calendar);</span>
-<span class="nc" id="L63">        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);</span>
-<span class="nc" id="L64">        setSupportActionBar(toolbar);</span>
+<span class="nc" id="L65">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L66">        setContentView(R.layout.activity_calendar);</span>
+<span class="nc" id="L67">        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);</span>
+<span class="nc" id="L68">        setSupportActionBar(toolbar);</span>
 
-<span class="nc" id="L66">        final IEventStore store = EventStoreFactory.getInstance(this);</span>
-<span class="nc" id="L67">        store.addListener(CalendarActivity.this);</span>
+<span class="nc" id="L70">        final IEventStore store = EventStoreFactory.getInstance(this);</span>
+<span class="nc" id="L71">        store.addListener(CalendarActivity.this);</span>
 
-<span class="nc" id="L69">        mCoordinator = (CoordinatorLayout) findViewById(R.id.coordinator);</span>
-<span class="nc" id="L70">        mAgendaView = (RecyclerView) findViewById(R.id.agenda_list);</span>
-<span class="nc" id="L71">        StickyHeaderLayoutManager lm = new StickyHeaderLayoutManager();</span>
-<span class="nc" id="L72">        mAgendaView.setLayoutManager(lm);</span>
+<span class="nc" id="L73">        mCoordinator = (CoordinatorLayout) findViewById(R.id.coordinator);</span>
+<span class="nc" id="L74">        mAgendaView = (RecyclerView) findViewById(R.id.agenda_list);</span>
+<span class="nc" id="L75">        StickyHeaderLayoutManager lm = new StickyHeaderLayoutManager();</span>
+<span class="nc" id="L76">        mAgendaView.setLayoutManager(lm);</span>
 
-<span class="nc" id="L74">        mCalendarView = (CompactCalendarView) findViewById(R.id.calendar_view);</span>
-<span class="nc" id="L75">        mCalendarView.setListener(this);</span>
-<span class="nc" id="L76">        updateCalenderView(store.getEvents());</span>
+<span class="nc" id="L78">        mCalendarView = (CompactCalendarView) findViewById(R.id.calendar_view);</span>
+<span class="nc" id="L79">        mCalendarView.setListener(this);</span>
+<span class="nc" id="L80">        updateCalenderView(store.getEvents());</span>
 
-<span class="nc" id="L78">        setTitle(getTitleString(mCalendarView.getFirstDayOfCurrentMonth()));</span>
+<span class="nc" id="L82">        Calendar c = Calendar.getInstance();</span>
+<span class="nc" id="L83">        c.setTime(mCalendarView.getFirstDayOfCurrentMonth());</span>
+<span class="nc" id="L84">        setTitle(getTitleString(c));</span>
 
-<span class="nc" id="L80">        mAdapter = new AgendaAdapter(this);</span>
-<span class="nc" id="L81">        mAgendaView.setAdapter(mAdapter);</span>
+<span class="nc" id="L86">        mAdapter = new AgendaAdapter(this);</span>
+<span class="nc" id="L87">        mAgendaView.setAdapter(mAdapter);</span>
 
-<span class="nc" id="L83">        tryMoveAgendaListToDate(new Date());</span>
+<span class="nc" id="L89">        tryMoveAgendaListToDate(new Date());</span>
 
-<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)</span>
-            != PackageManager.PERMISSION_GRANTED) {
-<span class="nc" id="L87">            CompositeMultiplePermissionsListener listener = new CompositeMultiplePermissionsListener(</span>
-                DialogOnAnyDeniedMultiplePermissionsListener.Builder
-<span class="nc" id="L89">                    .withContext(this)</span>
-<span class="nc" id="L90">                    .withTitle(R.string.permission_rationale_title)</span>
-<span class="nc" id="L91">                    .withMessage(R.string.permission_rationale_message)</span>
-<span class="nc" id="L92">                    .withButtonText(android.R.string.ok)</span>
-<span class="nc" id="L93">                    .withIcon(R.drawable.ic_launcher)</span>
-<span class="nc" id="L94">                    .build(),</span>
-                new SampleMultiplePermissionListener());
+<span class="nc" id="L91">        Dexter.continuePendingRequestIfPossible(permissionListener);</span>
 
-<span class="nc" id="L97">            Dexter.checkPermissions(listener, Manifest.permission.ACCESS_FINE_LOCATION);</span>
-<span class="nc" id="L98">        } else {</span>
-<span class="nc" id="L99">            queryWeatherWithCurrentLocation();</span>
-        }
-<span class="nc" id="L101">    }</span>
+<span class="nc" id="L93">        Task.callInBackground(new Callable&lt;Boolean&gt;() {</span>
+            @Override
+            public Boolean call() throws Exception {
+<span class="nc bnc" id="L96" title="All 2 branches missed.">                if (ActivityCompat.checkSelfPermission(CalendarActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)</span>
+                    != PackageManager.PERMISSION_GRANTED) {
+<span class="nc" id="L98">                    Dexter.checkPermissionOnSameThread(permissionListener, Manifest.permission.ACCESS_FINE_LOCATION);</span>
+<span class="nc" id="L99">                    return false;</span>
+                }
+<span class="nc" id="L101">                return true;</span>
+            }
+<span class="nc" id="L103">        }).continueWith(new Continuation&lt;Boolean, Void&gt;() {</span>
+            @Override
+            public Void then(Task&lt;Boolean&gt; task) throws Exception {
+<span class="nc" id="L106">                queryWeatherWithCurrentLocation();</span>
+<span class="nc" id="L107">                return null;</span>
+            }
+        }, Task.UI_THREAD_EXECUTOR);
+<span class="nc" id="L110">    }</span>
 
     // collect the location information
     private Task&lt;Void&gt; queryWeatherWithCurrentLocation() {
-<span class="nc bnc" id="L105" title="All 2 branches missed.">        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)</span>
             != PackageManager.PERMISSION_GRANTED) {
-<span class="nc" id="L107">            return Task.forError(new IllegalStateException(&quot;the location permission doesn't grants&quot;));</span>
+<span class="nc" id="L116">            return Task.forError(new IllegalStateException(&quot;the location permission doesn't grants&quot;));</span>
         }
 
-<span class="nc" id="L110">        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);</span>
+<span class="nc" id="L119">        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);</span>
 
         // Creating an empty criteria object
-<span class="nc" id="L113">        Criteria criteria = new Criteria();</span>
+<span class="nc" id="L122">        Criteria criteria = new Criteria();</span>
         // Getting the name of the provider that meets the criteria
-<span class="nc" id="L115">        String provider = locationManager.getBestProvider(criteria, false);</span>
-<span class="nc bnc" id="L116" title="All 2 branches missed.">        if (TextUtils.isEmpty(provider)) {</span>
-<span class="nc" id="L117">            return Task.forError(new IllegalStateException(&quot;the location provider is empty&quot;));</span>
+<span class="nc" id="L124">        String provider = locationManager.getBestProvider(criteria, false);</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (TextUtils.isEmpty(provider)) {</span>
+<span class="nc" id="L126">            return Task.forError(new IllegalStateException(&quot;the location provider is empty&quot;));</span>
         }
 
-<span class="nc" id="L120">        Location location = locationManager.getLastKnownLocation(provider);</span>
-<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (location == null) {</span>
-<span class="nc" id="L122">            return Task.forError(new IllegalStateException(&quot;we get the empty result from LocationManager.getLastKnownLocation()&quot;));</span>
+<span class="nc" id="L129">        Location location = locationManager.getLastKnownLocation(provider);</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (location == null) {</span>
+<span class="nc" id="L131">            return Task.forError(new IllegalStateException(&quot;we get the empty result from LocationManager.getLastKnownLocation()&quot;));</span>
         }
-<span class="nc" id="L124">        return WeatherManager.getInstance(CalendarActivity.this)</span>
-<span class="nc" id="L125">                      .queryWeather(location.getLatitude(), location.getLongitude())</span>
-<span class="nc" id="L126">                      .continueWith(new Continuation&lt;WeatherResponse, Void&gt;() {</span>
+<span class="nc" id="L133">        return WeatherManager.getInstance(CalendarActivity.this)</span>
+<span class="nc" id="L134">                      .queryWeather(location.getLatitude(), location.getLongitude())</span>
+<span class="nc" id="L135">                      .continueWith(new Continuation&lt;WeatherResponse, Void&gt;() {</span>
                           @Override
                           public Void then(Task&lt;WeatherResponse&gt; task) throws Exception {
-<span class="nc bnc" id="L129" title="All 4 branches missed.">                              if (task.isFaulted() || task.isCancelled()) {</span>
-<span class="nc" id="L130">                                  String msg = &quot;query the weather data is failed : &quot; + task.getError().getMessage();</span>
-<span class="nc" id="L131">                                  Snackbar.make(mCoordinator, msg, Snackbar.LENGTH_SHORT).show();</span>
-<span class="nc" id="L132">                                  return null;</span>
+<span class="nc bnc" id="L138" title="All 4 branches missed.">                              if (task.isFaulted() || task.isCancelled()) {</span>
+<span class="nc" id="L139">                                  String msg = &quot;query the weather data is failed : &quot; + task.getError().getMessage();</span>
+<span class="nc" id="L140">                                  Snackbar.make(mCoordinator, msg, Snackbar.LENGTH_SHORT).show();</span>
+<span class="nc" id="L141">                                  return null;</span>
                               }
-<span class="nc" id="L134">                              List&lt;WeatherItem&gt; list = task.getResult().getWeathers();</span>
-<span class="nc" id="L135">                              WeatherItem weather1st = list.get(0);</span>
-<span class="nc" id="L136">                              WeatherItem weatherLast = list.get(list.size() - 1);</span>
-<span class="nc" id="L137">                              mAdapter.updateSections(weather1st.time * 1000, weatherLast.time * 1000);</span>
-<span class="nc" id="L138">                              mAgendaView.invalidate();</span>
-<span class="nc" id="L139">                              Snackbar.make(mCoordinator, &quot;query the weather data is successful&quot;, Snackbar.LENGTH_SHORT).show();</span>
-<span class="nc" id="L140">                              return null;</span>
+<span class="nc" id="L143">                              List&lt;WeatherItem&gt; list = task.getResult().getWeathers();</span>
+<span class="nc" id="L144">                              WeatherItem weather1st = list.get(0);</span>
+<span class="nc" id="L145">                              WeatherItem weatherLast = list.get(list.size() - 1);</span>
+<span class="nc" id="L146">                              mAdapter.updateSections(weather1st.time * 1000, weatherLast.time * 1000);</span>
+<span class="nc" id="L147">                              mAgendaView.invalidate();</span>
+<span class="nc" id="L148">                              Snackbar.make(mCoordinator, &quot;query the weather data is successful&quot;, Snackbar.LENGTH_SHORT).show();</span>
+<span class="nc" id="L149">                              return null;</span>
                           }
                       }, Task.UI_THREAD_EXECUTOR);
     }
 
-<span class="nc" id="L145">    private class SampleMultiplePermissionListener implements MultiplePermissionsListener {</span>
+<span class="nc" id="L154">    private class SamplePermissionListener implements PermissionListener {</span>
+        @Override
+        public void onPermissionGranted(PermissionGrantedResponse response) {
+<span class="nc" id="L157">            queryWeatherWithCurrentLocation();</span>
+<span class="nc" id="L158">        }</span>
 
-        @Override public void onPermissionsChecked(MultiplePermissionsReport report) {
-<span class="nc bnc" id="L148" title="All 2 branches missed.">            if (report.areAllPermissionsGranted()) {</span>
-<span class="nc" id="L149">                queryWeatherWithCurrentLocation();</span>
-            }
-<span class="nc" id="L151">        }</span>
+        @Override
+        public void onPermissionDenied(PermissionDeniedResponse response) {
+<span class="nc" id="L162">        }</span>
 
-        @Override public void onPermissionRationaleShouldBeShown(List&lt;PermissionRequest&gt; permissions,
-                                                                 final PermissionToken token) {
-<span class="nc" id="L155">            new AlertDialog.Builder(CalendarActivity.this)</span>
-<span class="nc" id="L156">                .setTitle(R.string.permission_rationale_title)</span>
-<span class="nc" id="L157">                .setMessage(R.string.permission_rationale_message)</span>
-<span class="nc" id="L158">                .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {</span>
+        @Override
+        public void onPermissionRationaleShouldBeShown(PermissionRequest permission,
+                                                       final PermissionToken token) {
+<span class="nc" id="L167">            new AlertDialog.Builder(CalendarActivity.this)</span>
+<span class="nc" id="L168">                .setTitle(R.string.permission_rationale_title)</span>
+<span class="nc" id="L169">                .setMessage(R.string.permission_rationale_message)</span>
+<span class="nc" id="L170">                .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {</span>
                     @Override public void onClick(DialogInterface dialog, int which) {
-<span class="nc" id="L160">                        dialog.dismiss();</span>
-<span class="nc" id="L161">                        token.cancelPermissionRequest();</span>
-<span class="nc" id="L162">                    }</span>
+<span class="nc" id="L172">                        dialog.dismiss();</span>
+<span class="nc" id="L173">                        token.cancelPermissionRequest();</span>
+<span class="nc" id="L174">                    }</span>
                 })
-<span class="nc" id="L164">                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {</span>
+<span class="nc" id="L176">                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {</span>
                     @Override public void onClick(DialogInterface dialog, int which) {
-<span class="nc" id="L166">                        dialog.dismiss();</span>
-<span class="nc" id="L167">                        token.continuePermissionRequest();</span>
-<span class="nc" id="L168">                    }</span>
+<span class="nc" id="L178">                        dialog.dismiss();</span>
+<span class="nc" id="L179">                        token.continuePermissionRequest();</span>
+<span class="nc" id="L180">                    }</span>
                 })
-<span class="nc" id="L170">                .setOnDismissListener(new DialogInterface.OnDismissListener() {</span>
+<span class="nc" id="L182">                .setOnDismissListener(new DialogInterface.OnDismissListener() {</span>
                     @Override public void onDismiss(DialogInterface dialog) {
-<span class="nc" id="L172">                        token.cancelPermissionRequest();</span>
-<span class="nc" id="L173">                    }</span>
-<span class="nc" id="L174">                }).show();</span>
-<span class="nc" id="L175">        }</span>
+<span class="nc" id="L184">                        token.cancelPermissionRequest();</span>
+<span class="nc" id="L185">                    }</span>
+<span class="nc" id="L186">                }).show();</span>
+<span class="nc" id="L187">        }</span>
     }
 
     private boolean tryMoveAgendaListToDate(Date date) {
         try {
-<span class="nc" id="L180">            mAgendaView.scrollToPosition(mAdapter.getSectionPosition(date));</span>
-<span class="nc" id="L181">            return true;</span>
-<span class="nc" id="L182">        } catch (IndexOutOfBoundsException e) {</span>
-<span class="nc" id="L183">            return false;</span>
+<span class="nc" id="L192">            mAgendaView.scrollToPosition(mAdapter.getSectionPosition(date));</span>
+<span class="nc" id="L193">            return true;</span>
+<span class="nc" id="L194">        } catch (IndexOutOfBoundsException e) {</span>
+<span class="nc" id="L195">            return false;</span>
         }
     }
 
     @Override
     protected void onDestroy() {
-<span class="nc" id="L189">        super.onDestroy();</span>
-<span class="nc" id="L190">        EventStoreFactory.getInstance(this).removeListener(this);</span>
-<span class="nc" id="L191">    }</span>
+<span class="nc" id="L201">        super.onDestroy();</span>
+<span class="nc" id="L202">        EventStoreFactory.getInstance(this).removeListener(this);</span>
+<span class="nc" id="L203">    }</span>
 
-    private String getTitleString(Date date) {
-<span class="nc" id="L194">        int year = date.getYear() + 1900;</span>
-<span class="nc" id="L195">        int month = date.getMonth();</span>
-<span class="nc" id="L196">        return String.format(&quot;%s %s&quot;, year, Utility.convertMonthStr(month).substring(0, 3));</span>
+    private String getTitleString(Calendar calendar) {
+<span class="nc" id="L206">        int year = calendar.get(Calendar.YEAR);</span>
+<span class="nc" id="L207">        int month = calendar.get(Calendar.MONTH);</span>
+<span class="nc" id="L208">        return String.format(&quot;%s %s&quot;, year, Utility.convertMonthStr(month).substring(0, 3));</span>
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-<span class="nc" id="L202">        getMenuInflater().inflate(R.menu.menu_calendar, menu);</span>
-<span class="nc" id="L203">        return true;</span>
+<span class="nc" id="L214">        getMenuInflater().inflate(R.menu.menu_calendar, menu);</span>
+<span class="nc" id="L215">        return true;</span>
     }
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-<span class="nc bnc" id="L208" title="All 2 branches missed.">        boolean hasData = EventStoreFactory.getInstance(this).countEvents() &gt; 0;</span>
-<span class="nc bnc" id="L209" title="All 2 branches missed.">        menu.findItem(R.id.menuitem_add_items).setVisible(!hasData);</span>
-<span class="nc" id="L210">        menu.findItem(R.id.menuitem_clean_items).setVisible(hasData);</span>
-<span class="nc" id="L211">        return super.onPrepareOptionsMenu(menu);</span>
+<span class="nc bnc" id="L220" title="All 2 branches missed.">        boolean hasData = EventStoreFactory.getInstance(this).countEvents() &gt; 0;</span>
+<span class="nc bnc" id="L221" title="All 2 branches missed.">        menu.findItem(R.id.menuitem_add_items).setVisible(!hasData);</span>
+<span class="nc" id="L222">        menu.findItem(R.id.menuitem_clean_items).setVisible(hasData);</span>
+<span class="nc" id="L223">        return super.onPrepareOptionsMenu(menu);</span>
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-<span class="nc" id="L216">        final IEventStore store = EventStoreFactory.getInstance(CalendarActivity.this);</span>
-<span class="nc bnc" id="L217" title="All 3 branches missed.">        switch (item.getItemId()) {</span>
+<span class="nc" id="L228">        final IEventStore store = EventStoreFactory.getInstance(CalendarActivity.this);</span>
+<span class="nc bnc" id="L229" title="All 3 branches missed.">        switch (item.getItemId()) {</span>
             case R.id.menuitem_add_items:
-<span class="nc" id="L219">                Task.callInBackground(new Callable&lt;List&lt;POEvent&gt;&gt;() {</span>
+<span class="nc" id="L231">                Task.callInBackground(new Callable&lt;List&lt;POEvent&gt;&gt;() {</span>
                     @Override
                     public List&lt;POEvent&gt; call() throws Exception {
-<span class="nc" id="L222">                        List&lt;POEvent&gt; data = MockEventsGenerator.generateEvents();</span>
-<span class="nc" id="L223">                        store.addEvents(data);</span>
-<span class="nc" id="L224">                        return data;</span>
+<span class="nc" id="L234">                        List&lt;POEvent&gt; data = MockEventsGenerator.generateEvents();</span>
+<span class="nc" id="L235">                        store.addEvents(data);</span>
+<span class="nc" id="L236">                        return data;</span>
                     }
-<span class="nc" id="L226">                }).onSuccess(new Continuation&lt;List&lt;POEvent&gt;, Void&gt;() {</span>
+<span class="nc" id="L238">                }).onSuccess(new Continuation&lt;List&lt;POEvent&gt;, Void&gt;() {</span>
                     @Override
                     public Void then(Task&lt;List&lt;POEvent&gt;&gt; task) throws Exception {
-<span class="nc" id="L229">                        Snackbar.make(mCoordinator, &quot;import the events successful&quot;, Snackbar.LENGTH_SHORT).show();</span>
-<span class="nc" id="L230">                        invalidateOptionsMenu();</span>
-<span class="nc" id="L231">                        return null;</span>
+<span class="nc" id="L241">                        Snackbar.make(mCoordinator, &quot;import the events successful&quot;, Snackbar.LENGTH_SHORT).show();</span>
+<span class="nc" id="L242">                        invalidateOptionsMenu();</span>
+<span class="nc" id="L243">                        return null;</span>
                     }
                 }, Task.UI_THREAD_EXECUTOR);
-<span class="nc" id="L234">                return true;</span>
+<span class="nc" id="L246">                return true;</span>
             case R.id.menuitem_clean_items:
-<span class="nc" id="L236">                Task.callInBackground(new Callable&lt;Void&gt;() {</span>
+<span class="nc" id="L248">                Task.callInBackground(new Callable&lt;Void&gt;() {</span>
                     @Override
                     public Void call() throws Exception {
-<span class="nc" id="L239">                        store.removeAllRecords();</span>
-<span class="nc" id="L240">                        return null;</span>
+<span class="nc" id="L251">                        store.removeAllRecords();</span>
+<span class="nc" id="L252">                        return null;</span>
                     }
-<span class="nc" id="L242">                }).continueWith(new Continuation&lt;Void, Void&gt;() {</span>
+<span class="nc" id="L254">                }).continueWith(new Continuation&lt;Void, Void&gt;() {</span>
                     @Override
                     public Void then(Task&lt;Void&gt; task) throws Exception {
-<span class="nc" id="L245">                        onEventsInsert(store.getEvents());</span>
-<span class="nc" id="L246">                        Snackbar.make(mCoordinator, &quot;cleaning the events successful&quot;, Snackbar.LENGTH_SHORT).show();</span>
-<span class="nc" id="L247">                        invalidateOptionsMenu();</span>
-<span class="nc" id="L248">                        return null;</span>
+<span class="nc" id="L257">                        onEventsInsert(store.getEvents());</span>
+<span class="nc" id="L258">                        Snackbar.make(mCoordinator, &quot;cleaning the events successful&quot;, Snackbar.LENGTH_SHORT).show();</span>
+<span class="nc" id="L259">                        invalidateOptionsMenu();</span>
+<span class="nc" id="L260">                        return null;</span>
                     }
                 }, Task.UI_THREAD_EXECUTOR);
-<span class="nc" id="L251">                return true;</span>
+<span class="nc" id="L263">                return true;</span>
             default:
-<span class="nc" id="L253">                return super.onOptionsItemSelected(item);</span>
+<span class="nc" id="L265">                return super.onOptionsItemSelected(item);</span>
         }
     }
 
     @Override
     public void onDayClick(Date dateClicked) {
-<span class="nc bnc" id="L259" title="All 2 branches missed.">        if (!tryMoveAgendaListToDate(dateClicked)) {</span>
-<span class="nc" id="L260">            Snackbar.make(mCoordinator, R.string.select_wrong_date, Snackbar.LENGTH_SHORT).show();</span>
+<span class="nc bnc" id="L271" title="All 2 branches missed.">        if (!tryMoveAgendaListToDate(dateClicked)) {</span>
+<span class="nc" id="L272">            Snackbar.make(mCoordinator, R.string.select_wrong_date, Snackbar.LENGTH_SHORT).show();</span>
         }
-<span class="nc" id="L262">    }</span>
+<span class="nc" id="L274">    }</span>
 
     @Override
     public void onMonthScroll(Date firstDayOfNewMonth) {
-<span class="nc" id="L266">        tryMoveAgendaListToDate(firstDayOfNewMonth);</span>
-<span class="nc" id="L267">        setTitle(getTitleString(firstDayOfNewMonth));</span>
-<span class="nc" id="L268">    }</span>
+<span class="nc" id="L278">        tryMoveAgendaListToDate(firstDayOfNewMonth);</span>
+<span class="nc" id="L279">        Calendar c = Calendar.getInstance();</span>
+<span class="nc" id="L280">        c.setTime(firstDayOfNewMonth);</span>
+<span class="nc" id="L281">        setTitle(getTitleString(c));</span>
+<span class="nc" id="L282">    }</span>
 
     @Override
     public void onEventsInsert(Cursor cursor) {
-<span class="nc" id="L272">        mAdapter.updateEvents();</span>
-<span class="nc" id="L273">        updateCalenderView(cursor);</span>
-<span class="nc" id="L274">        mAgendaView.invalidate();</span>
-<span class="nc" id="L275">    }</span>
+<span class="nc" id="L286">        mAdapter.updateEvents();</span>
+<span class="nc" id="L287">        updateCalenderView(cursor);</span>
+<span class="nc" id="L288">        mAgendaView.invalidate();</span>
+<span class="nc" id="L289">    }</span>
 
     private void updateCalenderView(@NonNull Cursor cursor) {
-<span class="nc" id="L278">        cursor.moveToFirst();</span>
-<span class="nc" id="L279">        mCalendarView.removeAllEvents();</span>
-<span class="nc bnc" id="L280" title="All 2 branches missed.">        while(cursor.moveToNext()) {</span>
-<span class="nc" id="L281">            POEvent e = POEvent.createFromCursor(cursor);</span>
-<span class="nc" id="L282">            mCalendarView.addEvent(e.toEvent(), false);</span>
-<span class="nc" id="L283">        }</span>
-<span class="nc" id="L284">        mCalendarView.invalidate();</span>
-<span class="nc" id="L285">    }</span>
+<span class="nc" id="L292">        cursor.moveToFirst();</span>
+<span class="nc" id="L293">        mCalendarView.removeAllEvents();</span>
+<span class="nc bnc" id="L294" title="All 2 branches missed.">        while(cursor.moveToNext()) {</span>
+<span class="nc" id="L295">            POEvent e = POEvent.createFromCursor(cursor);</span>
+<span class="nc" id="L296">            mCalendarView.addEvent(e.toEvent(), false);</span>
+<span class="nc" id="L297">        }</span>
+<span class="nc" id="L298">        mCalendarView.invalidate();</span>
+<span class="nc" id="L299">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span>Generated by the Android Gradle plugin 2.2.1</div></body></html>
