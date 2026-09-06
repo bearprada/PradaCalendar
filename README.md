@@ -4,6 +4,10 @@ screen record : https://www.youtube.com/watch?v=pGtKCOC01aI
 
 ## Build
 
+The minimum supported Android version is Android 6.0 (API 23), matching the
+[current AndroidX default minimum SDK](https://developer.android.com/jetpack/androidx/versions).
+Devices running Android versions below 6.0 are no longer supported.
+
 Use JDK 17 or 21 and Android SDK Platform 35 (with Build Tools 35.0.0).
 Set `ANDROID_HOME` to your SDK directory, or set `sdk.dir` in `local.properties`.
 
