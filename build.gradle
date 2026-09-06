@@ -2,17 +2,25 @@
 
 buildscript {
     repositories {
-        jcenter()
+        google()
+        mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.1'
-        classpath 'com.dicedmelon.gradle:jacoco-android:0.1.1'
+        classpath 'com.android.tools.build:gradle:8.9.2'
     }
 }
 
 allprojects {
     repositories {
-        jcenter()
+        // This legacy artifact was published only to JCenter.
+        exclusiveContent {
+            forRepository {
+                maven { url = uri("https://maven.aliyun.com/repository/jcenter") }
+            }
+            filter { includeModule("org.zakariya.stickyheaders", "stickyheaders") }
+        }
+        google()
+        mavenCentral()
     }
 }
 
