@@ -27,7 +27,6 @@ import example.prada.lab.pradaoutlook.weather.WeatherManager;
  * Created by prada on 10/27/16.
  */
 public class AgendaAdapter extends SectioningAdapter {
-    private static final int MILL_SECONDS_IN_A_DAY = 24 * 60 * 60 * 1000;
 
     public static final int ITEM_TYPE_EVENT = 1;
     public static final int ITEM_TYPE_NO_EVENT = 2;
@@ -89,7 +88,7 @@ public class AgendaAdapter extends SectioningAdapter {
                                        int headerUserType) {
         DayViewHolder vh = (DayViewHolder) viewHolder;
         Calendar c = (Calendar) mFrom.clone();
-        c.add(Calendar.HOUR, 24 * sectionIndex);
+        c.add(Calendar.DAY_OF_MONTH, sectionIndex);
         vh.bind(c, mWeatherMgr.fetchWeather(c.getTimeInMillis()));
     }
 
@@ -135,9 +134,10 @@ public class AgendaAdapter extends SectioningAdapter {
     }
 
     public int getSectionIndex(long millSeconds) {
-        long diffMillSeconds = millSeconds - mFrom.getTimeInMillis();
-        int index =  (int) Math.floor(diffMillSeconds / MILL_SECONDS_IN_A_DAY);
-        if (index >= mTotalSections.get()) {
+        Calendar date = (Calendar) mFrom.clone();
+        date.setTimeInMillis(millSeconds);
+        int index = date.before(mFrom) ? -1 : (int) Utility.getDaysBetween(mFrom, date);
+        if (index < 0 || index >= mTotalSections.get()) {
             throw new IndexOutOfBoundsException("the range should be 0 to " +
                 mTotalSections + ", but it's " + index);
         }
@@ -162,7 +162,7 @@ public class AgendaAdapter extends SectioningAdapter {
         mTo.setTime(latestEvent.getTo());
         normalizeDate(mFrom);
         normalizeDate(mTo);
-        mTo.setTimeInMillis(mTo.getTimeInMillis() + Utility.MILL_SECONDS_A_DAY);
+        mTo.add(Calendar.DAY_OF_MONTH, 1);
         long days = Utility.getDaysBetween(mFrom, mTo);
         mTotalSections.set((int) days);
         mCursor.moveToFirst();

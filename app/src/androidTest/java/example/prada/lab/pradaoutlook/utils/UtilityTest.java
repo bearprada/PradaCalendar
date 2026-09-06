@@ -8,12 +8,32 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
 
 import java.util.Calendar;
+import java.util.TimeZone;
 
 /**
  * Created by prada on 11/1/16.
  */
 @RunWith(AndroidJUnit4.class)
 public class UtilityTest {
+
+    @Test
+    public void testCalendarDaysAcrossDstWithoutChangingInputs() {
+        for (int month : new int[] {Calendar.MARCH, Calendar.OCTOBER}) {
+            Calendar start = Calendar.getInstance(TimeZone.getTimeZone("Europe/London"));
+            start.clear();
+            start.set(2026, month, 24, 23, 59, 59);
+            start.set(Calendar.MILLISECOND, 999);
+            Calendar end = (Calendar) start.clone();
+            end.set(2026, month, 31, 0, 0, 0);
+            end.set(Calendar.MILLISECOND, 0);
+            Calendar originalStart = (Calendar) start.clone();
+            Calendar originalEnd = (Calendar) end.clone();
+            assertEquals(7, Utility.getDaysBetween(start, end));
+            assertEquals(0, Utility.getDaysBetween(end, start));
+            assertEquals(originalStart, start);
+            assertEquals(originalEnd, end);
+        }
+    }
 
     @Test
     public void testDaysBetweenLeafYear() throws Exception {

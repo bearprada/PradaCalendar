@@ -3,6 +3,7 @@ package example.prada.lab.pradaoutlook.utils;
 import android.support.annotation.NonNull;
 
 import java.util.Calendar;
+import java.util.TimeZone;
 
 /**
  * Created by prada on 10/29/16.
@@ -24,15 +25,24 @@ public class Utility {
         if (cal1 == null || cal2 == null) {
             return 0;
         }
-        // normalize the days
-        cal1.set(Calendar.HOUR_OF_DAY, 0);
-        cal2.set(Calendar.HOUR_OF_DAY, 0);
-        long t1 = cal1.getTimeInMillis();
-        long t2 = cal2.getTimeInMillis();
-        if (t1 >= t2) {
-            return 0;
-        }
-        return ((t2 - t1) / MILL_SECONDS_A_DAY);
+        long t1 = dateInUtc(cal1);
+        long t2 = dateInUtc(cal2);
+        return t1 >= t2 ? 0 : (t2 - t1) / MILL_SECONDS_A_DAY;
+    }
+
+    // Compare local dates at UTC midnight, preserving the calendar system and
+    // leaving callers untouched. Local days can contain 23 or 25 hours at DST.
+    private static long dateInUtc(Calendar calendar) {
+        Calendar date = (Calendar) calendar.clone();
+        int era = date.get(Calendar.ERA);
+        int year = date.get(Calendar.YEAR);
+        int month = date.get(Calendar.MONTH);
+        int day = date.get(Calendar.DAY_OF_MONTH);
+        date.setTimeZone(TimeZone.getTimeZone("UTC"));
+        date.clear();
+        date.set(Calendar.ERA, era);
+        date.set(year, month, day);
+        return date.getTimeInMillis();
     }
 
     /**

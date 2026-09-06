@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.TimeZone;
 
 import static org.junit.Assert.*;
 
@@ -40,6 +41,35 @@ public class AgendaAdapterTest {
     @After
     public void eraseStore() {
         mStore.removeAllRecords();
+    }
+
+    @Test
+    public void testSectionsAcrossDst() {
+        TimeZone originalZone = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("Europe/London"));
+            for (int month : new int[] {Calendar.MARCH, Calendar.OCTOBER}) {
+                mStore.removeAllRecords();
+                Calendar day = Calendar.getInstance();
+                day.clear();
+                day.set(2026, month, 24);
+                List<POEvent> events = new ArrayList<>();
+                for (int i = 0; i < 8; i++) {
+                    events.add(new POEvent("DST event", "label", day.getTime(), day.getTime()));
+                    day.add(Calendar.DAY_OF_MONTH, 1);
+                }
+                mStore.addEvents(events);
+                mAdapter = new AgendaAdapter(InstrumentationRegistry.getTargetContext());
+                assertEquals(8, mAdapter.getNumberOfSections());
+                for (int i = 0; i < events.size(); i++) {
+                    assertEquals(i, mAdapter.getSectionIndex(events.get(i).getFrom().getTime()));
+                    assertEquals(1, mAdapter.getNumberOfItemsInSection(i));
+                    assertEquals(AgendaAdapter.ITEM_TYPE_EVENT, mAdapter.getSectionItemUserType(i, 0));
+                }
+            }
+        } finally {
+            TimeZone.setDefault(originalZone);
+        }
     }
 
     @Test
