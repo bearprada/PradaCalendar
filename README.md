@@ -1,45 +1,53 @@
 # PradaCalendar
 
-screen record : https://www.youtube.com/watch?v=pGtKCOC01aI
+Screen recording: https://www.youtube.com/watch?v=pGtKCOC01aI
+
+## Current status
+
+The event database, event/weather models, and event-store layer have been converted to Kotlin. The conversion is available for review in [PR #1](https://github.com/bearprada/PradaCalendar/pull/1).
+
+Verification completed:
+
+- `./gradlew build --no-daemon --stacktrace`
+- `./gradlew testDebugUnitTest --no-daemon`
+- `git diff --check`
+
+Instrumentation tests still require a connected Android device or emulator.
 
 ## Build
 
-The minimum supported Android version is Android 6.0 (API 23), matching the
-[current AndroidX default minimum SDK](https://developer.android.com/jetpack/androidx/versions).
-Devices running Android versions below 6.0 are no longer supported.
+The minimum supported Android version is Android 6.0 (API 23). Set `ANDROID_HOME` to your SDK directory, or set `sdk.dir` in `local.properties`.
 
-Use JDK 17 or 21 and Android SDK Platform 35 (with Build Tools 35.0.0).
-Set `ANDROID_HOME` to your SDK directory, or set `sdk.dir` in `local.properties`.
+Use JDK 17 or 21 and Android SDK Platform 35 with Build Tools 35.0.0.
 
 ```sh
 ./gradlew build
 ```
 
-The build uses Gradle 8.11.1 and Android Gradle Plugin 8.9.2. APKs are written to
-`app/build/outputs/apk/`. Google Maven and Maven Central provide dependencies;
-the JCenter archive at Aliyun is restricted to the legacy stickyheaders artifact.
-The app retains target SDK 24 to preserve its runtime behavior. Its expired target
-SDK is reported as a lint warning; publishing to Google Play requires a separate
-target SDK migration. Other lint errors still fail the build.
+The project uses Gradle 8.11.1 and Android Gradle Plugin 8.9.2. APKs are written to `app/build/outputs/apk/`.
 
-## Import Test Data
+The app retains target SDK 24 to preserve its existing runtime behavior. This produces an expired-target-SDK lint warning; publishing to Google Play requires a separate target SDK migration.
 
-You can insert the mock data from the button on the toolbar.
+## Import test data
 
-![Alt](images/import_mock_data.jpg "Import mock data")
+Use the import mock data button on the toolbar.
 
-## Test Case
+![Import mock data](images/import_mock_data.jpg)
 
-The unit tests can run through Android Studio or the command line, Hint : you need to connect an android phone
+## Instrumentation tests and coverage
 
-```
+Run instrumentation tests with a connected Android phone or emulator:
+
+```sh
 ./gradlew connectedCheck
 ```
 
-The report page locates at folder `app/build/reports/androidTests`
+Reports are written to `app/build/reports/androidTests`. Generate the debug coverage report with:
 
-Debug instrumentation coverage uses the Android Gradle plugin's built-in JaCoCo support.
-Run `./gradlew createDebugCoverageReport` with a connected device or emulator.
-Reports are written under `app/build/reports/coverage/`. Example report:
+```sh
+./gradlew createDebugCoverageReport
+```
 
-![Alt](images/code_coverage_report.png "Code Coverage Report")
+Coverage reports are written to `app/build/reports/coverage/`.
+
+![Code coverage report](images/code_coverage_report.png)
